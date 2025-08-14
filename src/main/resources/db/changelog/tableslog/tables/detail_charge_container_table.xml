@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- DetailChargeContainer Table -->
+    <changeSet author="redDot" id="2" context="postgresql, oracle">
+        <createSequence sequenceName="detail_charge_container_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="detail_charge_container">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="fee_category_id" type="BIGINT"/>
+            <column name="cdr_info_id" type="BIGINT"/>
+        </createTable>
+   </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- CDR Info Table -->
+    <changeSet author="redDot" id="7" >
+        <createSequence sequenceName="cdr_info_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="cdr_info">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="bill_run_id" type="BIGINT"/>
+            <column name="call_flow" type="VARCHAR(50)"/>
+            <column name="other_num" type="VARCHAR(50)"/>
+            <column name="call_mask" type="VARCHAR(50)"/>
+            <column name="date_time" type="TIMESTAMP"/>
+            <column name="chg_amt" type="DECIMAL(18,2)"/>
+            <column name="tax_amt1" type="DECIMAL(18,2)"/>
+            <column name="tax_amt2" type="DECIMAL(18,2)"/>
+            <column name="tax_amt3" type="DECIMAL(18,2)"/>
+            <column name="volume" type="VARCHAR(50)"/>
+            <column name="service_type" type="VARCHAR(50)"/>
+            <column name="start_time" type="TIMESTAMP"/>
+            <column name="end_time" type="TIMESTAMP"/>
+            <column name="duration" type="VARCHAR(50)"/>
+            <column name="result_reason" type="VARCHAR(100)"/>
+            <column name="service_flow" type="VARCHAR(100)"/>
+            <column name="network" type="VARCHAR(50)"/>
+            <column name="country" type="VARCHAR(50)"/>
+            <column name="operator" type="VARCHAR(50)"/>
+            <column name="gprs_flag" type="VARCHAR(10)"/>
+            <column name="cf_num" type="VARCHAR(50)"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

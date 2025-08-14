@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- AddressType Table -->
+    <changeSet author="redDot" id="2" context="postgresql, oracle">
+        <createSequence sequenceName="address_type_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="address_type">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="addr_type" type="VARCHAR(50)"/>
+            <column name="addr1" type="VARCHAR(255)"/>
+            <column name="addr2" type="VARCHAR(255)"/>
+            <column name="addr3" type="VARCHAR(255)"/>
+            <column name="addr4" type="VARCHAR(255)"/>
+            <column name="addr5" type="VARCHAR(255)"/>
+            <column name="addr6" type="VARCHAR(255)"/>
+            <column name="zipcode" type="VARCHAR(20)"/>
+            <column name="emailaddr" type="VARCHAR(255)"/>
+            <column name="smsaddr" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

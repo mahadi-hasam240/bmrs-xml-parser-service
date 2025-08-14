@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- SubsSumFee Table -->
+    <changeSet author="redDot" id="2" context="postgresql, oracle">
+        <createSequence sequenceName="subs_sum_fee_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="subs_sum_fee">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="voice_flag" type="VARCHAR(50)"/>
+            <column name="roam_flag" type="VARCHAR(50)"/>
+            <column name="desc" type="VARCHAR(255)"/>
+            <column name="number" type="VARCHAR(50)"/>
+            <column name="duration" type="VARCHAR(50)"/>
+            <column name="chg_fee" type="DECIMAL(18,2)"/>
+            <column name="currency" type="VARCHAR(50)"/>
+            <column name="pay_flag" type="VARCHAR(50)"/>
+            <column name="billitem_code" type="VARCHAR(50)"/>
+        </createTable>
+  </changeSet>
+
+</databaseChangeLog>

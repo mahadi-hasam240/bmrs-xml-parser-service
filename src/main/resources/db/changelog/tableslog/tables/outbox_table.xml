@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Transactional Outbox Table -->
+    <changeSet author="redDot" id="9">
+        <createSequence sequenceName="outbox_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="transactional_outbox">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="aggregate_id" type="BIGINT"/>
+            <column name="event_type" type="VARCHAR(100)"/>
+            <column name="event_payload" type="TEXT"/>
+            <column name="status" type="VARCHAR(50)" defaultValue="PENDING"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="sent_at" type="TIMESTAMP"/>
+            <column name="retry_count" type="INT" defaultValue="0"/>
+        </createTable>
+    </changeSet>
+
+
+</databaseChangeLog>

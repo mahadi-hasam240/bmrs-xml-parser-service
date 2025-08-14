@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet author="redDot" id="1">
+        <createSequence sequenceName="bill_info_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="bill_info">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="xml_info" type="TEXT"/>
+            <column name="oper_info" type="TEXT"/>
+            <column name="bill_cycle_id" type="VARCHAR(50)"/>
+            <column name="bill_run_id" type="BIGINT"/>
+            <column name="processed" type="BOOLEAN" defaultValue="FALSE"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

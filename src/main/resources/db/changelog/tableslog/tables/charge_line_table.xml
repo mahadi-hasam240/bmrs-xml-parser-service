@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Charge Line Table -->
+    <changeSet author="redDot" id="6">
+        <createSequence sequenceName="charge_line_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="charge_line">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="fee_category_id" type="BIGINT"/>
+            <column name="chg_fee" type="DECIMAL(18,2)"/>
+            <column name="desc" type="VARCHAR(200)"/>
+            <column name="category" type="VARCHAR(50)"/>
+            <column name="sub_category" type="VARCHAR(50)"/>
+            <column name="cycle_no" type="VARCHAR(20)"/>
+            <column name="service_type" type="VARCHAR(50)"/>
+            <column name="charge_code" type="VARCHAR(50)"/>
+            <column name="item_id" type="VARCHAR(50)"/>
+            <column name="rating_tax1" type="DECIMAL(18,2)"/>
+            <column name="rating_tax2" type="DECIMAL(18,2)"/>
+            <column name="rating_tax3" type="DECIMAL(18,2)"/>
+            <column name="rating_tax4" type="DECIMAL(18,2)"/>
+            <column name="disc1" type="DECIMAL(18,2)"/>
+            <column name="disc2" type="DECIMAL(18,2)"/>
+            <column name="disc3" type="DECIMAL(18,2)"/>
+            <column name="start_date" type="TIMESTAMP"/>
+            <column name="end_date" type="TIMESTAMP"/>
+            <column name="currency" type="VARCHAR(10)"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

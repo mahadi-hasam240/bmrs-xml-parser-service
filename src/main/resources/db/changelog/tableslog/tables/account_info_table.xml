@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Account Info Table -->
+    <changeSet author="redDot" id="4" >
+        <createSequence sequenceName="account_info_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="account_info">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="acct_code" type="VARCHAR(50)"/>
+            <column name="acct_number" type="VARCHAR(50)"/>
+            <column name="acct_name_id" type="BIGINT"/>
+            <column name="deposit" type="DECIMAL(18,2)"/>
+            <column name="previous_balance" type="DECIMAL(18,2)"/>
+            <column name="payments" type="DECIMAL(18,2)"/>
+            <column name="adjustments" type="DECIMAL(18,2)"/>
+            <column name="current_charges" type="DECIMAL(18,2)"/>
+            <column name="amount_due" type="DECIMAL(18,2)"/>
+            <column name="credit_limit" type="DECIMAL(18,2)"/>
+            <column name="pay_method" type="VARCHAR(50)"/>
+            <column name="print_vatno" type="VARCHAR(50)"/>
+            <column name="bank_acct_info_id" type="BIGINT"/>
+            <column name="acct_sum_fee_id" type="BIGINT"/>
+            <column name="subs_info_id" type="BIGINT"/>
+            <column name="processed" type="BOOLEAN" defaultValue="FALSE"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

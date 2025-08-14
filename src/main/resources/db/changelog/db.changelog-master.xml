@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Include ChangeSets for Table Creation -->
+    <include file="/db/changelog/tableslog/tables/bill_info_table.xml" />
+    <include file="/db/changelog/tableslog/tables/bill_cycle_table.xml" />
+    <include file="/db/changelog/tableslog/tables/bill_run_table.xml" />
+    <include file="/db/changelog/tableslog/tables/account_info_table.xml" />
+    <include file="/db/changelog/tableslog/tables/fee_category_table.xml" />
+    <include file="/db/changelog/tableslog/tables/charge_line_table.xml" />
+    <include file="/db/changelog/tableslog/tables/cdr_info_table.xml" />
+    <include file="/db/changelog/tableslog/tables/audit_log_table.xml" />
+    <include file="/db/changelog/tableslog/tables/address_type_table.xml" />
+    <include file="/db/changelog/tableslog/tables/bank_account_info_table.xml" />
+    <include file="/db/changelog/tableslog/tables/account_summary_fee_table.xml" />
+    <include file="/db/changelog/tableslog/tables/subscriber_info_table.xml" />
+    <include file="/db/changelog/tableslog/tables/detail_charge_container_table.xml" />
+    <include file="/db/changelog/tableslog/tables/subs_sum_fee_table.xml" />
+    <include file="/db/changelog/tableslog/tables/name_table.xml" />
+    <include file="/db/changelog/tableslog/tables/outbox_table.xml" />
+
+</databaseChangeLog>

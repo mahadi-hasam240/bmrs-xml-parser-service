@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Bill Cycle Table -->
+    <changeSet author="redDot" id="2" >
+        <createSequence sequenceName="bill_cycle_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="bill_cycle">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="cycle_begin" type="TIMESTAMP"/>
+            <column name="cycle_end" type="TIMESTAMP"/>
+            <column name="due_date" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
