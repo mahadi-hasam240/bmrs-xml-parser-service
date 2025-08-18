@@ -12,10 +12,14 @@ import java.util.List;
 @Data
 public class AccountInfo extends BaseEntity {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "account_info_seq")
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "acct_id") // Add this field based on DTO
+    private String acctId;
 
     @Column(name = "acct_code")
     private String acctCode;
@@ -23,7 +27,7 @@ public class AccountInfo extends BaseEntity {
     @Column(name = "acct_number")
     private String acctNumber;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL) // Consider cascading saves for names
     @JoinColumn(name = "acct_name_id", referencedColumnName = "id")
     private Name acctName;
 
@@ -45,6 +49,10 @@ public class AccountInfo extends BaseEntity {
     @Column(name = "amount_due")
     private BigDecimal amountDue;
 
+    @ManyToOne(cascade = CascadeType.ALL) // Example: cascade if AddressType is always owned by AccountInfo
+    @JoinColumn(name = "address_type_id", referencedColumnName = "id")
+    private AddressType addressType;
+
     @Column(name = "credit_limit")
     private BigDecimal creditLimit;
 
@@ -54,10 +62,41 @@ public class AccountInfo extends BaseEntity {
     @Column(name = "print_vatno")
     private String printVatNo;
 
-    @OneToMany(mappedBy = "accountInfo")
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "bank_account_info_id", referencedColumnName = "id")
+    private BankAccountInfo bankAccountInfo;
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "account_summary_fee_id", referencedColumnName = "id")
+    private AccountSummaryFee acctSumFee;
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "subscriber_info_id", referencedColumnName = "id")
+    private SubscriberInfo subsInfo;
+
+    // NEW Relationships
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "prev_bill_id", referencedColumnName = "id")
+    private PrevBill prevBill;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "cur_bill_id", referencedColumnName = "id")
+    private CurBill curBill;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "cust_charge_id", referencedColumnName = "id")
+    private CustCharge custCharge;
+
+    @OneToMany(mappedBy = "accountInfo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SumFee> sumFees;
+
+    @OneToMany(mappedBy = "accountInfo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RatingTax> ratingTaxs;
+
+    @OneToMany(mappedBy = "accountInfo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FeeCategory> feeCategories;
 
-    @OneToMany(mappedBy = "accountInfo")
+    @OneToMany(mappedBy = "accountInfo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CdrInfo> cdrInfos;
 
     // Getters and Setters

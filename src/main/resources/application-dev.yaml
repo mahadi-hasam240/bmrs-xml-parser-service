@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: bmrs-xml-parser
+
+  batch:
+    jdbc:
+      initialize-schema: never
+      table-prefix: BATCH_
+    job:
+      enabled: true
+  # ===============================
+  # = Liquibase Configuration
+  # ===============================
+  liquibase:
+    enabled: true
+    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=bmrs
+    user: postgres
+    password: root
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  # ===============================
+  # = Database Configuration (PostgreSQL)
+  # ===============================
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=bmrs
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+
+  # ===============================
+  # = Hibernate / JPA Settings
+  # ===============================
+  jpa:
+    database-platform: postgres
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+
+xml-file-location: /home/asif-akter/test_xml

@@ -22,5 +22,6 @@
     <include file="/db/changelog/tableslog/tables/subs_sum_fee_table.xml" />
     <include file="/db/changelog/tableslog/tables/name_table.xml" />
     <include file="/db/changelog/tableslog/tables/outbox_table.xml" />
+    <include file="db/changelog/db.changelog-batch-schema.xml"/>
 
 </databaseChangeLog>

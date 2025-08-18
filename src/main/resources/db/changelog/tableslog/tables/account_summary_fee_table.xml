@@ -18,6 +18,9 @@
             <column name="duration" type="VARCHAR(50)"/>
             <column name="chg_fee" type="VARCHAR(50)"/>
             <column name="currency" type="VARCHAR(50)"/>
+            <column name="processed" type="BOOLEAN" defaultValue="FALSE"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
         </createTable>
    </changeSet>
 

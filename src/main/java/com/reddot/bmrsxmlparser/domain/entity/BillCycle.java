@@ -1,5 +1,6 @@
 package com.reddot.bmrsxmlparser.domain.entity;
 
+import io.micrometer.core.annotation.Counted;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -16,6 +17,9 @@ public class BillCycle extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bill_cycle_seq")
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "bill_cycle_Id")
+    private String billCycleId;
 
     @Column(name = "cycle_begin")
     private LocalDateTime cycleBegin;

@@ -12,6 +12,7 @@
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="bill_cycle_id" type="VARCHAR2(50)"/>
             <column name="cycle_begin" type="TIMESTAMP"/>
             <column name="cycle_end" type="TIMESTAMP"/>
             <column name="due_date" type="TIMESTAMP"/>

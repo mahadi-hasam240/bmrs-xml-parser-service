@@ -9,8 +9,7 @@ import java.time.LocalDateTime;
 @Table(name = "audit_log")
 @SequenceGenerator(name = "audit_log_seq", sequenceName = "audit_log_id_seq", allocationSize = 1)
 @Data
-public class AuditLog extends BaseEntity {
-
+public class AuditLog {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "audit_log_seq")
     @Column(name = "id")

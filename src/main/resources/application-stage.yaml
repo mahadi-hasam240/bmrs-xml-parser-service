@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: bmrs-xml-parser
+
+  # ===============================
+  # = Liquibase Configuration
+  # ===============================
+  liquibase:
+    enabled: true
+    url: jdbc:oracle:thin:@dbcx8-scan.robi.com.bd:2021/srvsvs  # Same as above
+    user: redshift_nll_txn_settings
+    password: isM#78M*Gz
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  # ===============================
+  # = Database Configuration (Oracle)
+  # ===============================
+  datasource:
+    url: jdbc:oracle:thin:@dbcx8-scan.robi.com.bd:2021/srvsvs  # Same as above
+    username: redshift_nll_txn_settings
+    password: isM#78M*Gz
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  # ===============================
+  # = Hibernate / JPA Settings
+  # ===============================
+  jpa:
+    database-platform: oracle
+    hibernate:
+      ddl-auto: none  # or validate, depending on your environment
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+        use_sql_comments: false
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+
+xml-file-location: /home/asif-akter/test_xml
