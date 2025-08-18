@@ -11,13 +11,7 @@ import org.springframework.stereotype.Service;
 public class AccountInfoService {
     private final AccountInfoRepository accountInfoRepository;
 
-    public AccountInfo processAccountInfo(BillInfoDTO billInfoDTO) {
-        AccountInfo accountInfo = new AccountInfo();
-//        accountInfo.setAcctId(billInfoDTO.getAccountInfo().getAcctId());
-//        accountInfo.setAcctCode(billInfoDTO.getAccountInfo().getAcctCode());
-//        accountInfo.setAcctName(billInfoDTO.getAccountInfo().getAcctName());
-        // other fields mapping...
-
+    public AccountInfo save(AccountInfo accountInfo) {
         return accountInfoRepository.save(accountInfo);
     }
 }

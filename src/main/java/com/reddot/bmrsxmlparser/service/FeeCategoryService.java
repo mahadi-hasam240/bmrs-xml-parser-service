@@ -17,4 +17,8 @@ public class FeeCategoryService {
         // Map other fields...
         return feeCategoryRepository.save(feeCategory);
     }
+
+    public FeeCategory save(FeeCategory feeCategory){
+        return feeCategoryRepository.save(feeCategory);
+    }
 }

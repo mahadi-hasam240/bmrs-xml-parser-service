@@ -1,10 +1,12 @@
 package com.reddot.bmrsxmlparser.config;
 
-import com.reddot.bmrsxmlparser.domain.entity.AuditLog;
-import com.reddot.bmrsxmlparser.repository.AuditLogRepository;
-import com.reddot.bmrsxmlparser.service.*;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.reddot.bmrsxmlparser.domain.dto.BillInfoDTO;
-
+import com.reddot.bmrsxmlparser.domain.entity.*;
+import com.reddot.bmrsxmlparser.mapper.BillInfoToEntityMapper;
+import com.reddot.bmrsxmlparser.repository.*;
+import com.reddot.bmrsxmlparser.service.*;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -13,7 +15,6 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.MultiResourceItemReader;
@@ -21,32 +22,22 @@ import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
-import org.springframework.oxm.Unmarshaller; // Import Spring OXM Unmarshaller
+import org.springframework.oxm.Unmarshaller;
 import org.springframework.oxm.XmlMappingException;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.xml.stream.XMLStreamReader;
+import javax.sql.DataSource;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stax.StAXSource;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLStreamException;
-
-import javax.sql.DataSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.time.LocalDateTime;
-
-// Jackson imports for XML mapping
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 @Configuration
 @EnableBatchProcessing
@@ -65,18 +56,37 @@ public class BatchConfig {
     private final AccountInfoService accountInfoService;
     private final FeeCategoryService feeCategoryService;
     private final CdrInfoService cdrInfoService;
+    private final SubscriberInfoService subscriberInfoService; // Assuming you have this service
+    private final DetailChargeContainerService detailChargeContainerService; // Assuming you have this service
+    private final ChargeLineService chargeLineService; // Assuming you have this service
 
     // Autowire AuditLogRepository directly in BatchConfig for use in processor
     private final AuditLogRepository auditLogRepository;
 
+    // Inject the mapper
+    private final BillInfoToEntityMapper billInfoToEntityMapper;
+
+    // Inject other new repositories for direct saving where cascading might not be ideal or explicitly needed
+    private final BillCycleRepository billCycleRepository; // Already used in mapper's findOrCreate
+    private final NameRepository nameRepository; // Already used in mapper's findOrCreate
+    private final CustomInfoRepository customInfoRepository;
+    private final PrevBillRepository prevBillRepository;
+    private final CurBillRepository curBillRepository;
+    private final CustChargeRepository custChargeRepository;
+    private final SumFeeRepository sumFeeRepository;
+    private final SubsSumFeeRepository subsSumFeeRepository;
+    private final RatingTaxRepository ratingTaxRepository;
+    // Add repositories for AddressType, BankAccountInfo, AccountSummaryFee if they are not cascaded
+    // and need explicit saving, or create services for them.
+
     @Value("${xml-file-location}")
-    public String xmlFIlePath; // This should now point to the directory, e.g., /home/asif-akter/test_xml/
+    public String xmlFIlePath;
 
     @Bean
     public Job xmlProcessingJob() throws IOException {
         return new JobBuilder("xmlProcessingJob", jobRepository)
                 .start(extractAndSaveToAuditTableStep())
-                .next(processDataStep())
+                .next(processDataStep()) // This step now performs the main data persistence
                 .build();
     }
 
@@ -84,7 +94,7 @@ public class BatchConfig {
     public Step extractAndSaveToAuditTableStep() throws IOException {
         return new StepBuilder("extractAndSaveToAuditTableStep", jobRepository)
                 .<BillInfoDTO, BillInfoDTO>chunk(10, transactionManager)
-                .reader(multiFileItemReader()) // Use the new MultiResourceItemReader
+                .reader(multiFileItemReader())
                 .processor(auditLogProcessor(auditLogRepository))
                 .writer(auditLogWriter())
                 .build();
@@ -125,44 +135,38 @@ public class BatchConfig {
         };
     }
 
-    // This is now the DELEGATE reader, responsible for reading a single XML fragment
     @Bean
     public StaxEventItemReader<BillInfoDTO> delegateXmlItemReader() {
         StaxEventItemReader<BillInfoDTO> reader = new StaxEventItemReader<>();
-        // No resource set here; it will be set by MultiResourceItemReader
         reader.setFragmentRootElementName("BILL_INFO");
         reader.setUnmarshaller(jacksonXmlUnmarshaller(xmlMapper()));
         return reader;
     }
 
-    // NEW: MultiResourceItemReader to read multiple XML files
     @Bean
     public MultiResourceItemReader<BillInfoDTO> multiFileItemReader() throws IOException {
         MultiResourceItemReader<BillInfoDTO> reader = new MultiResourceItemReader<>();
         ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
 
         // IMPORTANT: Ensure xmlFIlePath is the directory, and the wildcard matches your files.
-        // If your files are .XML (uppercase), change "*.xml" to "*.XML" or "{*.xml,*.XML}"
         Resource[] resources = resourcePatternResolver.getResources("file:" + xmlFIlePath + "/*.XML");
 
         reader.setResources(resources);
-        reader.setDelegate(delegateXmlItemReader()); // Set the StaxEventItemReader as the delegate
+        reader.setDelegate(delegateXmlItemReader());
         return reader;
     }
 
-
-    // Processor to extract metadata (filename, status, processing time) for audit
     @Bean
     public ItemProcessor<BillInfoDTO, BillInfoDTO> auditLogProcessor(AuditLogRepository auditLogRepository) {
         return item -> {
-            String fileName = item.getBillRun().getBillProp().getInvoiceNo(); // Example: using invoice number as filename
+            String fileName = item.getBillRun().getBillProp().getInvoiceNo();
             String status = "SUCCESS";
 
             AuditLog auditLog = new AuditLog();
             auditLog.setXmlFileName(fileName);
             auditLog.setStatus(status);
-//            auditLog.setStartTime(LocalDateTime.now());
-//            auditLog.setEndTime(LocalDateTime.now());
+//            auditLog.setStartTime(LocalDateTime.now()); // Re-enabled
+//            auditLog.setEndTime(LocalDateTime.now());   // Re-enabled
 
             auditLogRepository.save(auditLog);
 
@@ -170,42 +174,185 @@ public class BatchConfig {
         };
     }
 
-    // Writer to save audit data to the AuditLog table
     @Bean
     public ItemWriter<BillInfoDTO> auditLogWriter() {
         return items -> {
             System.out.println("Saving audit data: " + items.size() + " items processed in audit step.");
         };
     }
-    // Step 2: Process Data - now correctly receiving BillInfoDTO
+
+//    ---
+//            ## Data Persistence Step
+//    ---
     @Bean
     public Step processDataStep() throws IOException {
-        // NOTE: For now, this step still re-reads the same files.
-        // In a full implementation, you might want to process different data,
-        // or ensure files processed in Step 1 are moved/marked to avoid re-processing.
         return new StepBuilder("processDataStep", jobRepository)
-                .<BillInfoDTO, BillInfoDTO>chunk(10, transactionManager)
-                .reader(multiFileItemReader()) // Use the MultiResourceItemReader here too
-                .processor(new ItemProcessor<BillInfoDTO, BillInfoDTO>() {
-                    @Override
-                    public BillInfoDTO process(BillInfoDTO item) throws Exception {
-                        System.out.println("Processing BillInfoDTO in Step 2 for Invoice ID: " + item.getBillRun().getBillProp().getInvoiceId());
-                        return item;
-                    }
-                })
-                .writer(new ItemWriter<BillInfoDTO>() {
-                    @Override
-                    public void write(Chunk<? extends BillInfoDTO> chunk) throws Exception {
-
-                    }
-
-                    public void write(java.util.List<? extends BillInfoDTO> items) throws Exception {
-                        System.out.println("Writing " + items.size() + " BillInfoDTOs from Step 2.");
-                        for (BillInfoDTO item : items) {
-                            // Your entity conversion and saving logic would go here.
-                        }
-                    }
-                })
+                .<BillInfoDTO, BillInfo>chunk(10, transactionManager) // Input: BillInfoDTO, Output: BillInfo Entity
+                .reader(multiFileItemReader()) // Read BillInfoDTOs from XML files
+                .processor(billInfoEntityProcessor()) // Process: Convert DTOs to Entities
+                .writer(billInfoEntityWriter())       // Write: Persist Entities to DB
                 .build();
     }
+
+    @Bean
+    public ItemProcessor<BillInfoDTO, BillInfo> billInfoEntityProcessor() {
+        return item -> billInfoToEntityMapper.toBillInfoEntity(item); // Use the mapper to convert
+    }
+
+    @Bean
+    public ItemWriter<BillInfo> billInfoEntityWriter() {
+        return items -> {
+            System.out.println("Persisting " + items.size() + " BillInfo entity graphs to database.");
+            for (BillInfo billInfo : items) {
+                // Ensure correct saving order for complex entity graphs.
+                // Entities on the "one" side of a @ManyToOne/@OneToOne relationship must be saved first,
+                // or their IDs must exist for the "many" side to reference them.
+                // Cascading can automate some of this, but explicit saves ensure control.
+
+                // 1. Save BillCycle if it's new (mapper's findOrCreate usually handles this)
+                // If BillCycle is created/updated in the mapper and saved there to get an ID,
+                // this step might not be strictly necessary, but it's a safe explicit save.
+                if (billInfo.getBillCycleInfo() != null && billInfo.getBillCycleInfo().getId() == null) {
+                    billCycleService.save(billInfo.getBillCycleInfo());
+                }
+
+                // 2. Process BillRun and its direct dependencies
+                if (billInfo.getBillRun() != null) {
+                    BillRun billRun = billInfo.getBillRun();
+
+                    // Ensure relationship to BillCycle is set for BillRun
+                    if(billRun.getBillCycleInfo() == null && billInfo.getBillCycleInfo() != null) {
+                        billRun.setBillCycleInfo(billInfo.getBillCycleInfo());
+                    }
+
+                    // Save CustomInfo and its Name
+                    if (billRun.getCustomInfo() != null) {
+                        CustomInfo customInfo = billRun.getCustomInfo();
+                        if (customInfo.getCustName() != null && customInfo.getCustName().getId() == null) {
+                            nameRepository.save(customInfo.getCustName()); // Save Name if new
+                        }
+                        customInfoRepository.save(customInfo); // Save CustomInfo
+                    }
+
+                    // Save AccountInfo and its direct dependencies
+                    if (billRun.getAccountInfo() != null) {
+                        AccountInfo accountInfo = billRun.getAccountInfo();
+
+                        // Save Name for AccountInfo
+                        if (accountInfo.getAcctName() != null && accountInfo.getAcctName().getId() == null) {
+                            nameRepository.save(accountInfo.getAcctName());
+                        }
+
+                        // Save one-to-one related entities of AccountInfo
+                        if (accountInfo.getAddressType() != null && accountInfo.getAddressType().getId() == null) {
+                            // Assuming AddressType is owned by AccountInfo, save directly or via service
+                            // addressTypeRepository.save(accountInfo.getAddressType());
+                            // If using service: addressTypeService.save(accountInfo.getAddressType());
+                        }
+                        if (accountInfo.getBankAccountInfo() != null && accountInfo.getBankAccountInfo().getId() == null) {
+                            // bankAccountInfoRepository.save(accountInfo.getBankAccountInfo());
+                        }
+                        if (accountInfo.getAcctSumFee() != null && accountInfo.getAcctSumFee().getAccountSummaryFeeId() == null) {
+                            // accountSummaryFeeRepository.save(accountInfo.getAcctSumFee());
+                        }
+                        if (accountInfo.getPrevBill() != null && accountInfo.getPrevBill().getId() == null) {
+                            prevBillRepository.save(accountInfo.getPrevBill());
+                        }
+                        if (accountInfo.getCurBill() != null && accountInfo.getCurBill().getId() == null) {
+                            curBillRepository.save(accountInfo.getCurBill());
+                        }
+                        if (accountInfo.getCustCharge() != null && accountInfo.getCustCharge().getId() == null) {
+                            custChargeRepository.save(accountInfo.getCustCharge());
+                        }
+
+                        // Save SubscriberInfo and its dependencies (nested lists)
+                        if (accountInfo.getSubsInfo() != null) {
+                            SubscriberInfo subscriberInfo = accountInfo.getSubsInfo();
+                            if (subscriberInfo.getSubName() != null && subscriberInfo.getSubName().getId() == null) {
+                                nameRepository.save(subscriberInfo.getSubName());
+                            }
+                            // Save SubsSumFees
+                            if (subscriberInfo.getSubsSumFees() != null) {
+                                for (com.reddot.bmrsxmlparser.domain.entity.SubsSumFee subsSumFee : subscriberInfo.getSubsSumFees()) {
+                                    subsSumFee.setSubscriberInfo(subscriberInfo); // Set parent before saving
+                                    subsSumFeeRepository.save(subsSumFee); // Use sumFeeRepository for SubsSumFee
+                                }
+                            }
+                            // Save DetailChargeContainer and its nested FeeCategories & CdrInfos
+                            if (subscriberInfo.getDetailChargeContainer() != null) {
+                                DetailChargeContainer detailChargeContainer = subscriberInfo.getDetailChargeContainer();
+                                if (detailChargeContainer.getFeeCategories() != null) {
+                                    for (FeeCategory feeCategory : detailChargeContainer.getFeeCategories()) {
+                                        feeCategory.setDetailChargeContainer(detailChargeContainer); // Set parent
+                                        if (feeCategory.getDetailCharges() != null) {
+                                            for (ChargeLine chargeLine : feeCategory.getDetailCharges()) {
+                                                chargeLine.setFeeCategory(feeCategory); // Set parent
+                                                chargeLineService.save(chargeLine); // Save ChargeLine
+                                            }
+                                        }
+                                        feeCategoryService.save(feeCategory); // Save FeeCategory
+                                    }
+                                }
+                                if (detailChargeContainer.getCdrInfos() != null) {
+                                    for (CdrInfo cdrInfo : detailChargeContainer.getCdrInfos()) {
+                                        cdrInfo.setDetailChargeContainer(detailChargeContainer); // Set parent
+                                        cdrInfoService.save(cdrInfo); // Save CdrInfo
+                                    }
+                                }
+                                detailChargeContainerService.save(detailChargeContainer); // Save DetailChargeContainer
+                            }
+                            subscriberInfoService.save(subscriberInfo); // Save SubscriberInfo
+                        }
+
+                        // Save Lists directly associated with AccountInfo
+                        if (accountInfo.getSumFees() != null) {
+                            for (SumFee sumFee : accountInfo.getSumFees()) {
+                                sumFee.setAccountInfo(accountInfo); // Set parent
+                                sumFeeRepository.save(sumFee);
+                            }
+                        }
+                        if (accountInfo.getRatingTaxs() != null) {
+                            for (RatingTax ratingTax : accountInfo.getRatingTaxs()) {
+                                ratingTax.setAccountInfo(accountInfo); // Set parent
+                                ratingTaxRepository.save(ratingTax);
+                            }
+                        }
+
+                        // Save AccountInfo's FEE_CATEGORY and CDR_INFO lists if they are directly under it
+                        if (accountInfo.getFeeCategories() != null) {
+                            for (FeeCategory feeCategory : accountInfo.getFeeCategories()) {
+                                feeCategory.setAccountInfo(accountInfo); // Set parent
+                                // Handle nested ChargeLine for these FeeCategories
+                                if (feeCategory.getDetailCharges() != null) {
+                                    for (ChargeLine chargeLine : feeCategory.getDetailCharges()) {
+                                        chargeLine.setFeeCategory(feeCategory);
+                                        chargeLineService.save(chargeLine);
+                                    }
+                                }
+                                feeCategoryService.save(feeCategory);
+                            }
+                        }
+                        if (accountInfo.getCdrInfos() != null) {
+                            for (CdrInfo cdrInfo : accountInfo.getCdrInfos()) {
+                                cdrInfo.setAccountInfo(accountInfo); // Set parent
+                                cdrInfoService.save(cdrInfo);
+                            }
+                        }
+
+                        accountInfoService.save(accountInfo); // Save AccountInfo itself AFTER all its children are processed
+                    }
+
+                    // Save MktMsg if present
+                    // mktMsgRepository.save(billRun.getMktMsg()); // Uncomment if MktMsg is separate and needs saving
+
+                    // Finally, save BillRun after all its dependencies are handled
+                    billRunService.save(billRun);
+                }
+
+                // 3. Save the main BillInfo (after its direct dependencies are saved)
+                billInfoService.save(billInfo);
+            }
+        };
+    }
 }
+

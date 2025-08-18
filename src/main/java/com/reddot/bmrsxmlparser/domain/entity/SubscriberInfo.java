@@ -32,7 +32,7 @@ public class SubscriberInfo {
     @OneToMany(mappedBy = "subscriberInfo")
     private List<SubsSumFee> subsSumFees;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "detail_charge_container_id", referencedColumnName = "id")
     private DetailChargeContainer detailChargeContainer;
 

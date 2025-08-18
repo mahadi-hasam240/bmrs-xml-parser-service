@@ -161,6 +161,23 @@ public class BillInfoDTO {
         @JacksonXmlProperty(localName = "ACCT_SUMFEE") @XmlElement(name = "ACCT_SUMFEE") private AccountSummaryFeeDTO acctSumFee;
 
         @JacksonXmlProperty(localName = "SUBS_INFO") @XmlElement(name = "SUBS_INFO") private SubscriberInfoDTO subsInfo;
+        // NEW Fields from XML
+        @JacksonXmlProperty(localName = "PREV_BILL")
+        private PrevBillDTO prevBill;
+
+        @JacksonXmlProperty(localName = "CUR_BILL")
+        private CurBillDTO curBill;
+
+        @JacksonXmlProperty(localName = "CUST_CHARGE")
+        private CustChargeDTO custCharge;
+
+        @JacksonXmlProperty(localName = "SUMFEE")
+        @JacksonXmlElementWrapper(useWrapping = false)
+        private List<SumFeeDTO> sumFees; // Renamed from SUMFEE to SumFeeDTO for clarity
+
+        @JacksonXmlProperty(localName = "RATING_TAX")
+        @JacksonXmlElementWrapper(useWrapping = false)
+        private List<RatingTaxDTO> ratingTaxs;
 
         @JacksonXmlProperty(localName = "FEE_CATEGORY")
         @JacksonXmlElementWrapper(useWrapping = false)
@@ -171,6 +188,46 @@ public class BillInfoDTO {
         @JacksonXmlElementWrapper(useWrapping = false)
         @XmlElement(name = "CDR_INFO") // Add for JAXB list elements
         private List<CdrInfoDTO> cdrInfos;
+    }
+
+    @Data @NoArgsConstructor @JsonIgnoreProperties(ignoreUnknown = true)
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class PrevBillDTO {
+        @JacksonXmlProperty(localName = "PREV_BALANCE") private BigDecimal prevBalance;
+        @JacksonXmlProperty(localName = "BALANCE_FWD")  private BigDecimal balanceFwd;
+    }
+
+    @Data @NoArgsConstructor @JsonIgnoreProperties(ignoreUnknown = true)
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class CurBillDTO {
+        @JacksonXmlProperty(localName = "CURRENT_CHARGES") private BigDecimal currentCharges;
+        // Add other fields from your XML's <CUR_BILL> structure here
+    }
+
+    @Data @NoArgsConstructor @JsonIgnoreProperties(ignoreUnknown = true)
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class CustChargeDTO {
+        @JacksonXmlProperty(localName = "CATEGORY") private String category;
+        // Add other fields from your XML's <CUST_CHARGE> structure here
+    }
+
+    @Data @NoArgsConstructor @JsonIgnoreProperties(ignoreUnknown = true)
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class SumFeeDTO {
+        @JacksonXmlProperty(localName = "VOICE_FLAG") private String voiceFlag;
+        @JacksonXmlProperty(localName = "DESC")       private String desc;
+        @JacksonXmlProperty(localName = "NUMBER")     private String number;
+        @JacksonXmlProperty(localName = "DURATION")   private String duration;
+        @JacksonXmlProperty(localName = "CHG_FEE")    private String chgFee; // Assuming String as per XML sample
+        @JacksonXmlProperty(localName = "CURRENCY")   private String currency;
+        // Add other fields from your XML's <SUMFEE> structure here
+    }
+
+    @Data @NoArgsConstructor @JsonIgnoreProperties(ignoreUnknown = true)
+    @XmlAccessorType(XmlAccessType.FIELD)
+    public static class RatingTaxDTO {
+        @JacksonXmlProperty(localName = "TAX_AMOUNT") private BigDecimal taxAmount; // Example field
+        // Add other fields from your XML's <RATING_TAX> structure here
     }
 
     @Data @NoArgsConstructor

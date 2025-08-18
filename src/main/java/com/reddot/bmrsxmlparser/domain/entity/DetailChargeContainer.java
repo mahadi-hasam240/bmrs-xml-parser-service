@@ -16,11 +16,18 @@ public class DetailChargeContainer {
     @Column(name = "id")
     private Long id;
 
-    @OneToMany(mappedBy = "detailChargeContainer")
+    @Column(name = "free_unit") // Added from DTO/XML
+    private String freeUnit;
+
+    @OneToMany(mappedBy = "detailChargeContainer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FeeCategory> feeCategories;
 
-    @OneToMany(mappedBy = "detailChargeContainer")
-    private List<CdrInfo> cdrInfoDTOS;
+    @OneToMany(mappedBy = "detailChargeContainer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CdrInfo> cdrInfos; // Changed name from cdrInfoDTOS to cdrInfos to hold entities
+
+    // Relationship back to SubscriberInfo (assuming it's nested under SubscriberInfo)
+    @OneToOne(mappedBy = "detailChargeContainer") // If SubscriberInfo has a @OneToOne to this container
+    private SubscriberInfo subscriberInfo;
 
     // Getters and Setters
 }

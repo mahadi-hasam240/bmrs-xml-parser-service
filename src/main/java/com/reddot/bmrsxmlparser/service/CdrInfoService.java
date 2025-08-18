@@ -11,10 +11,7 @@ import org.springframework.stereotype.Service;
 public class CdrInfoService {
     private final CdrInfoRepository cdrInfoRepository;
 
-    public CdrInfo processCdrInfo(BillInfoDTO billInfoDTO) {
-        CdrInfo cdrInfo = new CdrInfo();
-//        cdrInfo.setCallFlow(billInfoDTO.getCdrInfo().getCallFlow());
-        // Map other fields...
+    public CdrInfo save(CdrInfo cdrInfo) {
         return cdrInfoRepository.save(cdrInfo);
     }
 }

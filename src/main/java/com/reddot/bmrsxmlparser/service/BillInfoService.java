@@ -13,18 +13,9 @@ public class BillInfoService {
 
     private final BillInfoRepository billInfoRepository;
 
-    public BillInfo processBillInfo(BillInfoDTO billInfoDTO) {
-        // Convert DTO to Entity
-        BillInfo billInfo = new BillInfo();
-        billInfo.setXmlInfo(billInfoDTO.getXmlInfo());
-        billInfo.setOperInfo(billInfoDTO.getOperInfo());
-        billInfo.setBillCycleInfo(DtoToEntityMapper.mapBillCycleInfoDTOToEntity(billInfoDTO.getBillCycleInfo()));
-        billInfo.setBillRun(DtoToEntityMapper.mapBillRunDTOToEntity(billInfoDTO.getBillRun()));
-
-        // Other business logic (e.g., validation, transformations, etc.)
-
-        // Return the processed entity
+    public BillInfo save(BillInfo billInfo) {
         return billInfoRepository.save(billInfo);
     }
+
 }
 

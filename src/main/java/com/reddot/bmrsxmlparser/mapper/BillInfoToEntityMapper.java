@@ -1,10 +1,7 @@
 package com.reddot.bmrsxmlparser.mapper;
 
 import com.reddot.bmrsxmlparser.domain.dto.BillInfoDTO;
-import com.reddot.bmrsxmlparser.domain.entity.AccountInfo;
-import com.reddot.bmrsxmlparser.domain.entity.BillCycle;
-import com.reddot.bmrsxmlparser.domain.entity.BillInfo;
-import com.reddot.bmrsxmlparser.domain.entity.BillRun;
+import com.reddot.bmrsxmlparser.domain.entity.*;
 import com.reddot.bmrsxmlparser.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -360,7 +357,7 @@ public class BillInfoToEntityMapper {
         entity.setChgFee(dto.getChgFee());
         entity.setDesc(dto.getDesc());
         entity.setCategory(dto.getCategory());
-        entity.setSubcategory(dto.getSubcategory());
+        entity.setSubCategory(dto.getSubcategory());
         entity.setCycleNo(dto.getCycleNo());
         entity.setServiceType(dto.getServiceType());
         entity.setChargeCode(dto.getChargeCode());

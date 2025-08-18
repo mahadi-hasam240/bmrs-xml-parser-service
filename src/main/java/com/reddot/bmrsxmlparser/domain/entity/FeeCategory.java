@@ -3,6 +3,8 @@ package com.reddot.bmrsxmlparser.domain.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.List;
+
 @Entity
 @Table(name = "fee_category")
 @SequenceGenerator(name = "fee_category_seq", sequenceName = "fee_category_id_seq", allocationSize = 1)
@@ -14,15 +16,15 @@ public class FeeCategory extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL) // Consider cascade for relationship management
     @JoinColumn(name = "bill_run_id", referencedColumnName = "id")
     private BillRun billRun;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL) // Consider cascade for relationship management
     @JoinColumn(name = "account_info_id", referencedColumnName = "id")
     private AccountInfo accountInfo;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL) // Consider cascade for relationship management
     @JoinColumn(name = "detail_charge_container_id", referencedColumnName = "id")
     private DetailChargeContainer detailChargeContainer;
 
@@ -30,7 +32,12 @@ public class FeeCategory extends BaseEntity {
     private String payAcctCode;
 
     @Column(name = "free_unit")
-    private String freeUnit;
+    private String freeUnit; // Confirm if this is always null or has a value in XML for FeeCategory
+
+    // --- NEW: List of ChargeLine entities ---
+    @OneToMany(mappedBy = "feeCategory", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ChargeLine> detailCharges;
+
 
     // Getters and Setters
 }
