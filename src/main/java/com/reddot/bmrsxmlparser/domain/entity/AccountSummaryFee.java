@@ -11,6 +11,9 @@ public class AccountSummaryFee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "account_summary_fee_seq")
+    @Column(name = "id")
+    private Long id;
+
     @Column(name = "account_summary_fee_id")
     private Long accountSummaryFeeId;
 

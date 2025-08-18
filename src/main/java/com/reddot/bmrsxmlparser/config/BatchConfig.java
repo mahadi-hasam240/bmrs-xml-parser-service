@@ -85,20 +85,11 @@ public class BatchConfig {
     @Bean
     public Job xmlProcessingJob() throws IOException {
         return new JobBuilder("xmlProcessingJob", jobRepository)
-                .start(extractAndSaveToAuditTableStep())
-                .next(processDataStep()) // This step now performs the main data persistence
+                .start(processDataStep()) // Directly start with the data persistence step
                 .build();
     }
 
-    @Bean
-    public Step extractAndSaveToAuditTableStep() throws IOException {
-        return new StepBuilder("extractAndSaveToAuditTableStep", jobRepository)
-                .<BillInfoDTO, BillInfoDTO>chunk(10, transactionManager)
-                .reader(multiFileItemReader())
-                .processor(auditLogProcessor(auditLogRepository))
-                .writer(auditLogWriter())
-                .build();
-    }
+    // Removed the extractAndSaveToAuditTableStep bean as it's no longer part of the job flow.
 
     @Bean
     public XmlMapper xmlMapper() {
@@ -148,7 +139,6 @@ public class BatchConfig {
         MultiResourceItemReader<BillInfoDTO> reader = new MultiResourceItemReader<>();
         ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
 
-        // IMPORTANT: Ensure xmlFIlePath is the directory, and the wildcard matches your files.
         Resource[] resources = resourcePatternResolver.getResources("file:" + xmlFIlePath + "/*.XML");
 
         reader.setResources(resources);
@@ -156,30 +146,7 @@ public class BatchConfig {
         return reader;
     }
 
-    @Bean
-    public ItemProcessor<BillInfoDTO, BillInfoDTO> auditLogProcessor(AuditLogRepository auditLogRepository) {
-        return item -> {
-            String fileName = item.getBillRun().getBillProp().getInvoiceNo();
-            String status = "SUCCESS";
-
-            AuditLog auditLog = new AuditLog();
-            auditLog.setXmlFileName(fileName);
-            auditLog.setStatus(status);
-//            auditLog.setStartTime(LocalDateTime.now()); // Re-enabled
-//            auditLog.setEndTime(LocalDateTime.now());   // Re-enabled
-
-            auditLogRepository.save(auditLog);
-
-            return item;
-        };
-    }
-
-    @Bean
-    public ItemWriter<BillInfoDTO> auditLogWriter() {
-        return items -> {
-            System.out.println("Saving audit data: " + items.size() + " items processed in audit step.");
-        };
-    }
+    // Removed auditLogProcessor and auditLogWriter beans.
 
 //    ---
 //            ## Data Persistence Step
@@ -187,10 +154,10 @@ public class BatchConfig {
     @Bean
     public Step processDataStep() throws IOException {
         return new StepBuilder("processDataStep", jobRepository)
-                .<BillInfoDTO, BillInfo>chunk(10, transactionManager) // Input: BillInfoDTO, Output: BillInfo Entity
+                .<BillInfoDTO, BillInfo>chunk(1000, transactionManager) // Input: BillInfoDTO, Output: BillInfo Entity
                 .reader(multiFileItemReader()) // Read BillInfoDTOs from XML files
                 .processor(billInfoEntityProcessor()) // Process: Convert DTOs to Entities
-                .writer(billInfoEntityWriter())       // Write: Persist Entities to DB
+                .writer(billInfoEntityWriter())       // Write: Persist Entities to DB and Audit Log
                 .build();
     }
 
@@ -204,155 +171,166 @@ public class BatchConfig {
         return items -> {
             System.out.println("Persisting " + items.size() + " BillInfo entity graphs to database.");
             for (BillInfo billInfo : items) {
-                // Ensure correct saving order for complex entity graphs.
-                // Entities on the "one" side of a @ManyToOne/@OneToOne relationship must be saved first,
-                // or their IDs must exist for the "many" side to reference them.
-                // Cascading can automate some of this, but explicit saves ensure control.
+                try {
+                    // Ensure correct saving order for complex entity graphs.
+                    // THIS SECTION ASSUMES CASCADING IS NOT FULLY CONFIGURED,
+                    // OR YOU NEED EXPLICIT CONTROL OVER SAVE ORDER.
+                    // IF CascadeType.ALL IS USED EXTENSIVELY AND CORRECTLY,
+                    // MANY OF THESE EXPLICIT SAVES CAN BE REMOVED.
 
-                // 1. Save BillCycle if it's new (mapper's findOrCreate usually handles this)
-                // If BillCycle is created/updated in the mapper and saved there to get an ID,
-                // this step might not be strictly necessary, but it's a safe explicit save.
-                if (billInfo.getBillCycleInfo() != null && billInfo.getBillCycleInfo().getId() == null) {
-                    billCycleService.save(billInfo.getBillCycleInfo());
-                }
+                    // 1. Save BillCycle if it's new (mapper's findOrCreate handles this and saves it)
+                    // No need for explicit save here if mapper correctly uses repository.save() for new entities.
 
-                // 2. Process BillRun and its direct dependencies
-                if (billInfo.getBillRun() != null) {
-                    BillRun billRun = billInfo.getBillRun();
+                    // 2. Process BillRun and its direct dependencies
+                    if (billInfo.getBillRun() != null) {
+                        BillRun billRun = billInfo.getBillRun();
 
-                    // Ensure relationship to BillCycle is set for BillRun
-                    if(billRun.getBillCycleInfo() == null && billInfo.getBillCycleInfo() != null) {
-                        billRun.setBillCycleInfo(billInfo.getBillCycleInfo());
-                    }
-
-                    // Save CustomInfo and its Name
-                    if (billRun.getCustomInfo() != null) {
-                        CustomInfo customInfo = billRun.getCustomInfo();
-                        if (customInfo.getCustName() != null && customInfo.getCustName().getId() == null) {
-                            nameRepository.save(customInfo.getCustName()); // Save Name if new
-                        }
-                        customInfoRepository.save(customInfo); // Save CustomInfo
-                    }
-
-                    // Save AccountInfo and its direct dependencies
-                    if (billRun.getAccountInfo() != null) {
-                        AccountInfo accountInfo = billRun.getAccountInfo();
-
-                        // Save Name for AccountInfo
-                        if (accountInfo.getAcctName() != null && accountInfo.getAcctName().getId() == null) {
-                            nameRepository.save(accountInfo.getAcctName());
+                        // Ensure relationship to BillCycle is set for BillRun
+                        if(billRun.getBillCycleInfo() == null && billInfo.getBillCycleInfo() != null) {
+                            billRun.setBillCycleInfo(billInfo.getBillCycleInfo());
                         }
 
-                        // Save one-to-one related entities of AccountInfo
-                        if (accountInfo.getAddressType() != null && accountInfo.getAddressType().getId() == null) {
-                            // Assuming AddressType is owned by AccountInfo, save directly or via service
-                            // addressTypeRepository.save(accountInfo.getAddressType());
-                            // If using service: addressTypeService.save(accountInfo.getAddressType());
-                        }
-                        if (accountInfo.getBankAccountInfo() != null && accountInfo.getBankAccountInfo().getId() == null) {
-                            // bankAccountInfoRepository.save(accountInfo.getBankAccountInfo());
-                        }
-                        if (accountInfo.getAcctSumFee() != null && accountInfo.getAcctSumFee().getAccountSummaryFeeId() == null) {
-                            // accountSummaryFeeRepository.save(accountInfo.getAcctSumFee());
-                        }
-                        if (accountInfo.getPrevBill() != null && accountInfo.getPrevBill().getId() == null) {
-                            prevBillRepository.save(accountInfo.getPrevBill());
-                        }
-                        if (accountInfo.getCurBill() != null && accountInfo.getCurBill().getId() == null) {
-                            curBillRepository.save(accountInfo.getCurBill());
-                        }
-                        if (accountInfo.getCustCharge() != null && accountInfo.getCustCharge().getId() == null) {
-                            custChargeRepository.save(accountInfo.getCustCharge());
-                        }
-
-                        // Save SubscriberInfo and its dependencies (nested lists)
-                        if (accountInfo.getSubsInfo() != null) {
-                            SubscriberInfo subscriberInfo = accountInfo.getSubsInfo();
-                            if (subscriberInfo.getSubName() != null && subscriberInfo.getSubName().getId() == null) {
-                                nameRepository.save(subscriberInfo.getSubName());
+                        // Save CustomInfo and its Name (assuming CustomInfo is saved independently)
+                        if (billRun.getCustomInfo() != null) {
+                            CustomInfo customInfo = billRun.getCustomInfo();
+                            if (customInfo.getCustName() != null && customInfo.getCustName().getId() == null) {
+                                nameRepository.save(customInfo.getCustName()); // Save Name if new
                             }
-                            // Save SubsSumFees
-                            if (subscriberInfo.getSubsSumFees() != null) {
-                                for (com.reddot.bmrsxmlparser.domain.entity.SubsSumFee subsSumFee : subscriberInfo.getSubsSumFees()) {
-                                    subsSumFee.setSubscriberInfo(subscriberInfo); // Set parent before saving
-                                    subsSumFeeRepository.save(subsSumFee); // Use sumFeeRepository for SubsSumFee
+                            customInfoRepository.save(customInfo); // Save CustomInfo
+                        }
+
+                        // Save AccountInfo and its direct dependencies
+                        if (billRun.getAccountInfo() != null) {
+                            AccountInfo accountInfo = billRun.getAccountInfo();
+
+                            // Save Name for AccountInfo
+                            if (accountInfo.getAcctName() != null && accountInfo.getAcctName().getId() == null) {
+                                nameRepository.save(accountInfo.getAcctName());
+                            }
+
+                            // Save one-to-one related entities of AccountInfo (if not cascaded from AccountInfo)
+                            if (accountInfo.getAddressType() != null && accountInfo.getAddressType().getId() == null) { /* addressTypeRepository.save(accountInfo.getAddressType()); */ }
+                            if (accountInfo.getBankAccountInfo() != null && accountInfo.getBankAccountInfo().getId() == null) { /* bankAccountInfoRepository.save(accountInfo.getBankAccountInfo()); */ }
+                            if (accountInfo.getAcctSumFee() != null && accountInfo.getAcctSumFee().getId() == null) { /* accountSummaryFeeRepository.save(accountInfo.getAcctSumFee()); */ }
+
+                            if (accountInfo.getPrevBill() != null && accountInfo.getPrevBill().getId() == null) { prevBillRepository.save(accountInfo.getPrevBill()); }
+                            if (accountInfo.getCurBill() != null && accountInfo.getCurBill().getId() == null) { curBillRepository.save(accountInfo.getCurBill()); }
+                            if (accountInfo.getCustCharge() != null && accountInfo.getCustCharge().getId() == null) { custChargeRepository.save(accountInfo.getCustCharge()); }
+
+
+                            // Save SubscriberInfo and its dependencies (nested lists)
+                            if (accountInfo.getSubsInfo() != null) {
+                                SubscriberInfo subscriberInfo = accountInfo.getSubsInfo();
+                                if (subscriberInfo.getSubName() != null && subscriberInfo.getSubName().getId() == null) {
+                                    nameRepository.save(subscriberInfo.getSubName());
                                 }
-                            }
-                            // Save DetailChargeContainer and its nested FeeCategories & CdrInfos
-                            if (subscriberInfo.getDetailChargeContainer() != null) {
-                                DetailChargeContainer detailChargeContainer = subscriberInfo.getDetailChargeContainer();
-                                if (detailChargeContainer.getFeeCategories() != null) {
-                                    for (FeeCategory feeCategory : detailChargeContainer.getFeeCategories()) {
-                                        feeCategory.setDetailChargeContainer(detailChargeContainer); // Set parent
-                                        if (feeCategory.getDetailCharges() != null) {
-                                            for (ChargeLine chargeLine : feeCategory.getDetailCharges()) {
-                                                chargeLine.setFeeCategory(feeCategory); // Set parent
-                                                chargeLineService.save(chargeLine); // Save ChargeLine
+                                // Save SubsSumFees (linked to SubscriberInfo)
+                                if (subscriberInfo.getSubsSumFees() != null) {
+                                    for (com.reddot.bmrsxmlparser.domain.entity.SubsSumFee subsSumFee : subscriberInfo.getSubsSumFees()) {
+                                        subsSumFee.setSubscriberInfo(subscriberInfo); // Set parent before saving
+                                        subsSumFeeRepository.save(subsSumFee); // Assuming SubsSumFee is handled by SumFeeRepository
+                                    }
+                                }
+                                // Save DetailChargeContainer and its nested FeeCategories & CdrInfos
+                                if (subscriberInfo.getDetailChargeContainer() != null) {
+                                    DetailChargeContainer detailChargeContainer = subscriberInfo.getDetailChargeContainer();
+                                    if (detailChargeContainer.getFeeCategories() != null) {
+                                        for (FeeCategory feeCategory : detailChargeContainer.getFeeCategories()) {
+                                            feeCategory.setDetailChargeContainer(detailChargeContainer); // Set parent
+                                            if (feeCategory.getDetailCharges() != null) {
+                                                for (ChargeLine chargeLine : feeCategory.getDetailCharges()) {
+                                                    chargeLine.setFeeCategory(feeCategory); // Set parent
+                                                    chargeLineService.save(chargeLine); // Save ChargeLine
+                                                }
                                             }
+                                            feeCategoryService.save(feeCategory); // Save FeeCategory
                                         }
-                                        feeCategoryService.save(feeCategory); // Save FeeCategory
                                     }
-                                }
-                                if (detailChargeContainer.getCdrInfos() != null) {
-                                    for (CdrInfo cdrInfo : detailChargeContainer.getCdrInfos()) {
-                                        cdrInfo.setDetailChargeContainer(detailChargeContainer); // Set parent
-                                        cdrInfoService.save(cdrInfo); // Save CdrInfo
+                                    if (detailChargeContainer.getCdrInfos() != null) {
+                                        for (CdrInfo cdrInfo : detailChargeContainer.getCdrInfos()) {
+                                            cdrInfo.setDetailChargeContainer(detailChargeContainer); // Set parent
+                                            cdrInfoService.save(cdrInfo); // Save CdrInfo
+                                        }
                                     }
+                                    detailChargeContainerService.save(detailChargeContainer); // Save DetailChargeContainer
                                 }
-                                detailChargeContainerService.save(detailChargeContainer); // Save DetailChargeContainer
+                                subscriberInfoService.save(subscriberInfo); // Save SubscriberInfo
                             }
-                            subscriberInfoService.save(subscriberInfo); // Save SubscriberInfo
+
+                            // Save Lists directly associated with AccountInfo (if not cascaded from AccountInfo)
+                            if (accountInfo.getSumFees() != null) {
+                                for (SumFee sumFee : accountInfo.getSumFees()) {
+                                    sumFee.setAccountInfo(accountInfo); // Set parent
+                                    sumFeeRepository.save(sumFee);
+                                }
+                            }
+                            if (accountInfo.getRatingTaxs() != null) {
+                                for (RatingTax ratingTax : accountInfo.getRatingTaxs()) {
+                                    ratingTax.setAccountInfo(accountInfo); // Set parent
+                                    ratingTaxRepository.save(ratingTax);
+                                }
+                            }
+
+                            // Save AccountInfo's FEE_CATEGORY and CDR_INFO lists (if not cascaded from AccountInfo)
+                            if (accountInfo.getFeeCategories() != null) {
+                                for (FeeCategory feeCategory : accountInfo.getFeeCategories()) {
+                                    feeCategory.setAccountInfo(accountInfo); // Set parent
+                                    if (feeCategory.getDetailCharges() != null) {
+                                        for (ChargeLine chargeLine : feeCategory.getDetailCharges()) {
+                                            chargeLine.setFeeCategory(feeCategory);
+                                            chargeLineService.save(chargeLine);
+                                        }
+                                    }
+                                    feeCategoryService.save(feeCategory);
+                                }
+                            }
+                            if (accountInfo.getCdrInfos() != null) {
+                                for (CdrInfo cdrInfo : accountInfo.getCdrInfos()) {
+                                    cdrInfo.setAccountInfo(accountInfo); // Set parent
+                                    cdrInfoService.save(cdrInfo);
+                                }
+                            }
+
+                            accountInfoService.save(accountInfo); // Save AccountInfo itself AFTER all its children are processed
                         }
 
-                        // Save Lists directly associated with AccountInfo
-                        if (accountInfo.getSumFees() != null) {
-                            for (SumFee sumFee : accountInfo.getSumFees()) {
-                                sumFee.setAccountInfo(accountInfo); // Set parent
-                                sumFeeRepository.save(sumFee);
-                            }
-                        }
-                        if (accountInfo.getRatingTaxs() != null) {
-                            for (RatingTax ratingTax : accountInfo.getRatingTaxs()) {
-                                ratingTax.setAccountInfo(accountInfo); // Set parent
-                                ratingTaxRepository.save(ratingTax);
-                            }
-                        }
+                        // Save MktMsg if present (if not cascaded from BillRun)
+                        // mktMsgRepository.save(billRun.getMktMsg()); // Uncomment if MktMsg is separate and needs saving
 
-                        // Save AccountInfo's FEE_CATEGORY and CDR_INFO lists if they are directly under it
-                        if (accountInfo.getFeeCategories() != null) {
-                            for (FeeCategory feeCategory : accountInfo.getFeeCategories()) {
-                                feeCategory.setAccountInfo(accountInfo); // Set parent
-                                // Handle nested ChargeLine for these FeeCategories
-                                if (feeCategory.getDetailCharges() != null) {
-                                    for (ChargeLine chargeLine : feeCategory.getDetailCharges()) {
-                                        chargeLine.setFeeCategory(feeCategory);
-                                        chargeLineService.save(chargeLine);
-                                    }
-                                }
-                                feeCategoryService.save(feeCategory);
-                            }
-                        }
-                        if (accountInfo.getCdrInfos() != null) {
-                            for (CdrInfo cdrInfo : accountInfo.getCdrInfos()) {
-                                cdrInfo.setAccountInfo(accountInfo); // Set parent
-                                cdrInfoService.save(cdrInfo);
-                            }
-                        }
-
-                        accountInfoService.save(accountInfo); // Save AccountInfo itself AFTER all its children are processed
+                        // Finally, save BillRun after all its dependencies are handled
+                        billRunService.save(billRun);
                     }
 
-                    // Save MktMsg if present
-                    // mktMsgRepository.save(billRun.getMktMsg()); // Uncomment if MktMsg is separate and needs saving
+                    // 3. Save the main BillInfo (after its direct dependencies are saved)
+                    billInfoService.save(billInfo);
 
-                    // Finally, save BillRun after all its dependencies are handled
-                    billRunService.save(billRun);
+                    // --- AUDIT LOGGING: NOW AFTER SUCCESSFUL PERSISTENCE ---
+                    AuditLog auditLog = new AuditLog();
+                    auditLog.setXmlFileName(billInfo.getBillRun().getInvoiceNo()); // Assuming invoiceNo is unique and represents the file
+                    auditLog.setStatus("SUCCESS");
+//                    auditLog.setStartTime(LocalDateTime.now());
+//                    auditLog.setEndTime(LocalDateTime.now());
+                    auditLogRepository.save(auditLog);
+
+                } catch (Exception e) {
+                    // Log the error for this specific item/file
+                    System.err.println("Failed to persist data for BillInfo with invoice ID: " +
+                            (billInfo.getBillRun() != null ? billInfo.getBillRun().getInvoiceNo() : "N/A") +
+                            ". Error: " + e.getMessage());
+
+                    // Optionally, update audit log with FAILURE status for this file
+                    AuditLog auditLog = new AuditLog();
+                    auditLog.setXmlFileName(billInfo.getBillRun() != null ? billInfo.getBillRun().getInvoiceNo() : "ERROR_FILE");
+                    auditLog.setStatus("FAILED");
+//                    auditLog.setStartTime(LocalDateTime.now());
+//                    auditLog.setEndTime(LocalDateTime.now());
+                    auditLog.setErrorMessage(e.getMessage()); // Store error message
+                    auditLogRepository.save(auditLog);
+
+                    // Re-throw to indicate a chunk failure, Spring Batch will handle retries/skips if configured
+                    throw e;
                 }
-
-                // 3. Save the main BillInfo (after its direct dependencies are saved)
-                billInfoService.save(billInfo);
             }
         };
     }
 }
-
