@@ -16,8 +16,7 @@ public class BillRun extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bill_run_seq")
     @Column(name = "id")
     private Long id;
-
-    // Fields from BILL_PROP
+    // Fields from BILL_PROP (Mapped directly here)
     @Column(name = "invoice_id")
     private String invoiceId;
 
@@ -31,69 +30,62 @@ public class BillRun extends BaseEntity {
     private String barCodeNumber;
 
     @Column(name = "statement_date")
-    private LocalDateTime statementDate; // From BillProp
+    private LocalDateTime statementDate;
 
     @Column(name = "bill_period")
-    private String billPeriod; // From BillProp
+    private String billPeriod;
 
     @Column(name = "from_date")
-    private LocalDateTime fromDate; // From BillProp
+    private LocalDateTime fromDate;
 
     @Column(name = "to_date")
-    private LocalDateTime toDate; // From BillProp
+    private LocalDateTime toDate;
 
-    @Column(name = "due_date_bill_prop") // Renamed to differentiate from BillCycle's due_date
-    private LocalDateTime dueDate; // From BillProp
+    @Column(name = "due_date_bill_prop")
+    private LocalDateTime dueDate;
 
     @Column(name = "lang")
-    private String lang; // From BillProp
+    private String lang;
 
     @Column(name = "currency")
-    private String currency; // From BillProp
+    private String currency;
 
     @Column(name = "bill_medium")
-    private String billMedium; // From BillProp
+    private String billMedium;
 
     @Column(name = "fee_precision")
-    private String feePrecision; // From BillProp
+    private String feePrecision;
 
     @Column(name = "bill_insert")
-    private String billInsert; // From BillProp
+    private String billInsert;
 
     @Column(name = "bill_type")
-    private String billType; // From BillProp
+    private String billType;
 
     @Column(name = "mobile_number")
-    private String mobileNumber; // From BillProp
+    private String mobileNumber;
 
     @Column(name = "end_date")
-    private LocalDateTime endDate; // From BillProp
+    private LocalDateTime endDate;
 
     @Column(name = "main_offering_name")
-    private String mainOfferingName; // From BillProp
+    private String mainOfferingName;
 
-
-    // Relationships
-    @ManyToOne(cascade = CascadeType.ALL) // Consider cascading saves for BillCycle
+    // Relationships (Ensure CascadeType.ALL on owning sides)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "bill_cycle_id", referencedColumnName = "id")
-    private BillCycle billCycleInfo; // This is the BillCycleInfo from the root BILL_INFO
+    private BillCycle billCycleInfo;
 
-    @ManyToOne(cascade = CascadeType.ALL) // Relationship to AccountInfo
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "account_info_id", referencedColumnName = "id")
     private AccountInfo accountInfo;
 
-    @ManyToOne(cascade = CascadeType.ALL) // Relationship to CustomInfo
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "custom_info_id", referencedColumnName = "id")
     private CustomInfo customInfo;
 
-//    @ManyToOne(cascade = CascadeType.ALL) // NEW: Relationship to MktMsg
-//    @JoinColumn(name = "mkt_msg_id", referencedColumnName = "id")
-//    private MktMsg mktMsg;
-
-    // OneToMany relationships (inverse side of the relationship)
-    @OneToMany(mappedBy = "billRun", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BillInfo> billInfos;
-
+    // OneToMany relationships (inverse side, mappedBy is on the child entity)
+    // These should have cascade = CascadeType.ALL and orphanRemoval = true in the respective child entities.
     @OneToMany(mappedBy = "billRun", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FeeCategory> feeCategories;
 

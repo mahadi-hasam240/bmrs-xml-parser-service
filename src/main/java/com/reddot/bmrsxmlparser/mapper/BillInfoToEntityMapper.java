@@ -1,15 +1,14 @@
 package com.reddot.bmrsxmlparser.mapper;
 
-import com.reddot.bmrsxmlparser.domain.dto.BillInfoDTO;
+import com.reddot.bmrsxmlparser.domain.dto.*;
 import com.reddot.bmrsxmlparser.domain.entity.*;
 import com.reddot.bmrsxmlparser.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,16 +18,17 @@ import java.util.stream.Collectors;
 public class BillInfoToEntityMapper {
 
     // Define date/time formatters based on your XML data
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER_DDMMYYYY = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER_YYYYMMDD = DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss"); // NEW FORMATTER
+    private static final DateTimeFormatter DATE_FORMATTER_DDMMYYYY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter DATE_FORMATTER_YYYYMMDD = DateTimeFormatter.ofPattern("yyyyMMdd"); // For cases where there's no time part, but in YYYYMMDD format
 
     // Repositories for looking up existing entities
     private final BillCycleRepository billCycleRepository;
     private final NameRepository nameRepository;
     private final BillRunRepository billRunRepository;
-    private final AccountInfoRepository accountInfoRepository; // Will be used if AccountInfo is persisted independently
+    private final AccountInfoRepository accountInfoRepository;
     private final DetailChargeContainerRepository detailChargeContainerRepository;
-    // NEW: Repositories for newly identified entities (assuming they might need lookups or independent saves)
     private final CustomInfoRepository customInfoRepository;
     private final PrevBillRepository prevBillRepository;
     private final CurBillRepository curBillRepository;
@@ -55,7 +55,7 @@ public class BillInfoToEntityMapper {
 
         // Convert and link BillRun
         if (dto.getBillRun() != null) {
-            BillRun billRun = toBillRunEntity(dto.getBillRun(), billInfo.getBillCycleInfo());
+            BillRun billRun = toBillRunEntity(dto.getBillRun(), billInfo.getBillCycleInfo()); // Pass the BillCycle
             billInfo.setBillRun(billRun);
         }
 
@@ -94,12 +94,11 @@ public class BillInfoToEntityMapper {
             billRun.setInvoiceDate(parseDateTime(dto.getBillProp().getInvoiceDate()));
             billRun.setInvoiceNo(dto.getBillProp().getInvoiceNo());
             billRun.setBarCodeNumber(dto.getBillProp().getBarCodeNumber());
-            // Map other BillProp fields here if they go directly into BillRun entity
             billRun.setStatementDate(parseDateTime(dto.getBillProp().getStatementDate()));
             billRun.setBillPeriod(dto.getBillProp().getBillPeriod());
             billRun.setFromDate(parseDateTime(dto.getBillProp().getFromDate()));
             billRun.setToDate(parseDateTime(dto.getBillProp().getToDate()));
-            billRun.setDueDate(parseDateTime(dto.getBillProp().getDueDate())); // BillProp also has dueDate
+            billRun.setDueDate(parseDateTime(dto.getBillProp().getDueDate()));
             billRun.setLang(dto.getBillProp().getLang());
             billRun.setCurrency(dto.getBillProp().getCurrency());
             billRun.setBillMedium(dto.getBillProp().getBillMedium());
@@ -111,19 +110,16 @@ public class BillInfoToEntityMapper {
             billRun.setMainOfferingName(dto.getBillProp().getMainOfferingName());
         }
 
-        // Link BillCycle if provided (from root BillInfoDTO)
         billRun.setBillCycleInfo(billCycle);
 
-        // Convert and link AccountInfo
         if (dto.getAccountInfo() != null) {
             AccountInfo accountInfo = toAccountInfoEntity(dto.getAccountInfo());
-            billRun.setAccountInfo(accountInfo); // Assuming BillRun has ManyToOne relationship to AccountInfo
+            billRun.setAccountInfo(accountInfo);
         }
 
-        // Convert and link CustomInfo
         if (dto.getCustomInfo() != null) {
             CustomInfo customInfo = toCustomInfoEntity(dto.getCustomInfo());
-            billRun.setCustomInfo(customInfo); // Assuming BillRun has ManyToOne relationship to CustomInfo
+            billRun.setCustomInfo(customInfo);
         }
 
         return billRun;
@@ -141,7 +137,7 @@ public class BillInfoToEntityMapper {
         if (dto.getCustName() != null) {
             entity.setCustName(findOrCreateName(dto.getCustName()));
         }
-        return customInfoRepository.save(entity); // Assuming CustomInfo is saved independently
+        return entity; // Don't save here if cascading from BillRun, otherwise customInfoRepository.save(entity)
     }
 
     private AccountInfo toAccountInfoEntity(BillInfoDTO.AccountInfoDTO dto) {
@@ -149,7 +145,7 @@ public class BillInfoToEntityMapper {
             return null;
         }
         AccountInfo accountInfo = new AccountInfo();
-        accountInfo.setAcctId(dto.getAcctId()); // Ensure AccountInfo entity has acctId
+        accountInfo.setAcctId(dto.getAcctId());
         accountInfo.setAcctCode(dto.getAcctCode());
         accountInfo.setAcctNumber(dto.getAcctNumber());
         accountInfo.setDeposit(dto.getDeposit());
@@ -167,52 +163,54 @@ public class BillInfoToEntityMapper {
             accountInfo.setAcctName(acctName);
         }
 
-        // Convert AddressType
         if (dto.getAddressType() != null) {
             AddressType addressType = toAddressTypeEntity(dto.getAddressType());
             accountInfo.setAddressType(addressType);
         }
-        // Convert BankAccountInfo
         if (dto.getBankAccountInfo() != null) {
             BankAccountInfo bankAccountInfo = toBankAccountInfoEntity(dto.getBankAccountInfo());
             accountInfo.setBankAccountInfo(bankAccountInfo);
         }
-        // Convert AccountSummaryFee
         if (dto.getAcctSumFee() != null) {
             AccountSummaryFee accountSummaryFee = toAccountSummaryFeeEntity(dto.getAcctSumFee());
             accountInfo.setAcctSumFee(accountSummaryFee);
         }
 
-        // Process SubscriberInfo
         if (dto.getSubsInfo() != null) {
             SubscriberInfo subscriberInfo = toSubscriberInfoEntity(dto.getSubsInfo());
             accountInfo.setSubsInfo(subscriberInfo);
         }
 
-        // NEW: Mapping for previously unmapped fields
-        if (dto.getPrevBill() != null) { // Assuming PrevBillDTO exists
+        // Mapping for previously unmapped fields
+        if (dto.getPrevBill() != null) {
             PrevBill prevBill = toPrevBillEntity(dto.getPrevBill());
-            accountInfo.setPrevBill(prevBill); // Assuming AccountInfo has a PrevBill field
+            accountInfo.setPrevBill(prevBill);
         }
-        if (dto.getCurBill() != null) { // Assuming CurBillDTO exists
+        if (dto.getCurBill() != null) {
             CurBill curBill = toCurBillEntity(dto.getCurBill());
-            accountInfo.setCurBill(curBill); // Assuming AccountInfo has a CurBill field
+            accountInfo.setCurBill(curBill);
         }
-        if (dto.getCustCharge() != null) { // Assuming CustChargeDTO exists
+        if (dto.getCustCharge() != null) {
             CustCharge custCharge = toCustChargeEntity(dto.getCustCharge());
-            accountInfo.setCustCharge(custCharge); // Assuming AccountInfo has a CustCharge field
+            accountInfo.setCustCharge(custCharge);
         }
-        if (dto.getSumFees() != null) { // Assuming List<SumFeeDTO> exists
+        if (dto.getSumFees() != null) {
             List<SumFee> sumFees = dto.getSumFees().stream()
                     .map(this::toSumFeeEntity)
                     .collect(Collectors.toList());
-            accountInfo.setSumFees(sumFees); // Assuming AccountInfo has a List<SumFee> field
+            for (SumFee sumFee : sumFees) {
+                sumFee.setAccountInfo(accountInfo); // Set parent on child
+            }
+            accountInfo.setSumFees(sumFees);
         }
-        if (dto.getRatingTaxs() != null) { // Assuming List<RatingTaxDTO> exists
+        if (dto.getRatingTaxs() != null) {
             List<RatingTax> ratingTaxs = dto.getRatingTaxs().stream()
                     .map(this::toRatingTaxEntity)
                     .collect(Collectors.toList());
-            accountInfo.setRatingTaxs(ratingTaxs); // Assuming AccountInfo has a List<RatingTax> field
+            for (RatingTax ratingTax : ratingTaxs) {
+                ratingTax.setAccountInfo(accountInfo); // Set parent on child
+            }
+            accountInfo.setRatingTaxs(ratingTaxs);
         }
 
         return accountInfo;
@@ -267,10 +265,10 @@ public class BillInfoToEntityMapper {
         if (dto == null) return null;
         AccountSummaryFee entity = new AccountSummaryFee();
         entity.setVoiceFlag(dto.getVoiceFlag());
-        entity.setDesc(dto.getDesc());
+        entity.setDescription(dto.getDesc());
         entity.setNumber(dto.getNumber());
         entity.setDuration(dto.getDuration());
-        entity.setChgFee(dto.getChgFee()); // Ensure type matches in entity
+        entity.setChgFee(dto.getChgFee());
         entity.setCurrency(dto.getCurrency());
         return entity;
     }
@@ -287,14 +285,19 @@ public class BillInfoToEntityMapper {
         }
 
         if (dto.getSubsSumFees() != null) {
-            entity.setSubsSumFees(dto.getSubsSumFees().stream()
+            List<SubsSumFee> mappedSubsSumFees = dto.getSubsSumFees().stream()
                     .map(this::toSubsSumFeeEntity)
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList());
+            for (SubsSumFee subsSumFee : mappedSubsSumFees) {
+                subsSumFee.setSubscriberInfo(entity); // Set parent
+            }
+            entity.setSubsSumFees(mappedSubsSumFees);
         }
 
         if (dto.getDetailChargeContainer() != null) {
             DetailChargeContainer container = toDetailChargeContainerEntity(dto.getDetailChargeContainer());
             entity.setDetailChargeContainer(container);
+            container.setSubscriberInfo(entity); // Set bidirectional relationship
         }
 
         return entity;
@@ -320,33 +323,43 @@ public class BillInfoToEntityMapper {
         DetailChargeContainer entity = new DetailChargeContainer();
         entity.setFreeUnit(dto.getFreeUnit());
 
-        // Process nested FeeCategory and CdrInfo lists within DetailChargeContainer
         if (dto.getFeeCategories() != null) {
-            entity.setFeeCategories(dto.getFeeCategories().stream()
-                    .map(this::toFeeCategoryEntity) // Convert FeeCategory DTOs
-                    .collect(Collectors.toList()));
+            List<FeeCategory> mappedFeeCategories = dto.getFeeCategories().stream()
+                    .map(this::toFeeCategoryEntity)
+                    .collect(Collectors.toList());
+            for (FeeCategory feeCategory : mappedFeeCategories) {
+                feeCategory.setDetailChargeContainer(entity); // Set parent on child
+            }
+            entity.setFeeCategories(mappedFeeCategories);
         }
 
         if (dto.getCdrInfoDTOS() != null) {
-            entity.setCdrInfos(dto.getCdrInfoDTOS().stream()
-                    .map(this::toCdrInfoEntity) // Convert CdrInfo DTOs
-                    .collect(Collectors.toList()));
+            List<CdrInfo> mappedCdrInfos = dto.getCdrInfoDTOS().stream()
+                    .map(this::toCdrInfoEntity)
+                    .collect(Collectors.toList());
+            for (CdrInfo cdrInfo : mappedCdrInfos) {
+                cdrInfo.setDetailChargeContainer(entity); // Set parent on child
+            }
+            entity.setCdrInfos(mappedCdrInfos);
         }
         return entity;
     }
+
 
     private FeeCategory toFeeCategoryEntity(BillInfoDTO.FeeCategoryDTO dto) {
         if (dto == null) return null;
         FeeCategory entity = new FeeCategory();
         entity.setPayAcctCode(dto.getPayAcctCode());
-        // `freeUnit` might be in FeeCategory DTO but in your FeeCategory entity, it's also there.
-        // Ensure consistency. If it's only in DetailChargeContainer, remove from FeeCategory entity.
-        // For now, I'll assume it exists in FeeCategory as well from your entity definition.
+        // entity.setFreeUnit(dto.getFreeUnit()); // Uncomment if FeeCategory also has freeUnit from XML
 
         if (dto.getDetailCharges() != null) {
-            entity.setDetailCharges(dto.getDetailCharges().stream()
+            List<ChargeLine> mappedChargeLines = dto.getDetailCharges().stream()
                     .map(this::toChargeLineEntity)
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList());
+            for (ChargeLine chargeLine : mappedChargeLines) {
+                chargeLine.setFeeCategory(entity); // Set parent on child
+            }
+            entity.setDetailCharges(mappedChargeLines);
         }
         return entity;
     }
@@ -369,8 +382,8 @@ public class BillInfoToEntityMapper {
         entity.setDisc1(dto.getDisc1());
         entity.setDisc2(dto.getDisc2());
         entity.setDisc3(dto.getDisc3());
-        entity.setStartDate(parseDateTime(dto.getStartDate())); // Assuming this is also a datetime
-        entity.setEndDate(parseDateTime(dto.getEndDate()));     // Assuming this is also a datetime
+        entity.setStartDate(parseDateTime(dto.getStartDate()));
+        entity.setEndDate(parseDateTime(dto.getEndDate()));
         entity.setCurrency(dto.getCurrency());
         return entity;
     }
@@ -407,39 +420,45 @@ public class BillInfoToEntityMapper {
         PrevBill entity = new PrevBill();
         entity.setPrevBalance(dto.getPrevBalance());
         entity.setBalanceFwd(dto.getBalanceFwd());
-        return prevBillRepository.save(entity); // Assuming independent save or cascade from AccountInfo
+        return entity; // No direct save here if cascading from AccountInfo
     }
 
     private CurBill toCurBillEntity(BillInfoDTO.CurBillDTO dto) {
         if (dto == null) return null;
         CurBill entity = new CurBill();
-        entity.setCurrentCharges(dto.getCurrentCharges()); // Map all fields as per your CurBillDTO and Entity
-        // Add other fields from CurBillDTO to CurBill entity
-        return curBillRepository.save(entity); // Assuming independent save or cascade
+        entity.setCurrentCharges(dto.getCurrentCharges());
+        // Map other fields from CurBillDTO to CurBill entity
+        return entity; // No direct save here if cascading from AccountInfo
     }
 
     private CustCharge toCustChargeEntity(BillInfoDTO.CustChargeDTO dto) {
         if (dto == null) return null;
         CustCharge entity = new CustCharge();
-        entity.setCategory(dto.getCategory()); // Map all fields as per your CustChargeDTO and Entity
-        // Add other fields from CustChargeDTO to CustCharge entity
-        return custChargeRepository.save(entity); // Assuming independent save or cascade
+        entity.setCategory(dto.getCategory());
+        // Map other fields from CustChargeDTO to CustCharge entity
+        return entity; // No direct save here if cascading from AccountInfo
     }
 
     private SumFee toSumFeeEntity(BillInfoDTO.SumFeeDTO dto) {
         if (dto == null) return null;
         SumFee entity = new SumFee();
-        entity.setDesc(dto.getDesc()); // Map all fields as per your SumFeeDTO and Entity
-        // Add other fields from SumFeeDTO to SumFee entity
-        return sumFeeRepository.save(entity); // Assuming independent save or cascade
+        entity.setVoiceFlag(dto.getVoiceFlag());
+        entity.setDesc(dto.getDesc());
+        entity.setNumber(dto.getNumber());
+        entity.setDuration(dto.getDuration());
+        entity.setChgFee(dto.getChgFee());
+        entity.setCurrency(dto.getCurrency());
+//        entity.setPayFlag(dto.getPayFlag()); // Assuming PayFlag is also a field in SumFee entity/DTO
+//        entity.setBillItemCode(dto.getBillItemCode()); // Assuming BillItemCode is also a field in SumFee entity/DTO
+        return entity; // No direct save here if cascading from AccountInfo
     }
 
     private RatingTax toRatingTaxEntity(BillInfoDTO.RatingTaxDTO dto) {
         if (dto == null) return null;
         RatingTax entity = new RatingTax();
-        entity.setTaxAmount(dto.getTaxAmount()); // Map all fields as per your RatingTaxDTO and Entity
-        // Add other fields from RatingTaxDTO to RatingTax entity
-        return ratingTaxRepository.save(entity); // Assuming independent save or cascade
+        entity.setTaxAmount(dto.getTaxAmount());
+        // Map other fields from RatingTaxDTO to RatingTax entity
+        return entity; // No direct save here if cascading from AccountInfo
     }
 
     // Helper method for parsing date/time strings
@@ -447,16 +466,27 @@ public class BillInfoToEntityMapper {
         if (dateString == null || dateString.trim().isEmpty()) {
             return null;
         }
+        String trimmedDateString = dateString.trim();
         try {
-            // Try parsing with the full date-time format first
-            return LocalDateTime.parse(dateString.trim(), DATE_TIME_FORMATTER);
-        } catch (java.time.format.DateTimeParseException e) {
-            // If that fails, try parsing with just the date format (assuming 00:00:00 time)
+            // Try parsing with YYYYMMDD HH:mm:ss format first (e.g., "20241201 00:00:00")
+            return LocalDateTime.parse(trimmedDateString, DATE_TIME_FORMATTER_YYYYMMDD);
+        } catch (DateTimeParseException e1) {
             try {
-                return LocalDateTime.parse(dateString.trim() + " 00:00:00", DATE_TIME_FORMATTER);
-            } catch (java.time.format.DateTimeParseException ex) {
-                System.err.println("Could not parse date string: " + dateString + " - " + ex.getMessage());
-                return null; // Or throw a custom exception, or handle as needed
+                // Try parsing with dd/MM/yyyy HH:mm:ss format (e.g., "10/01/2025 00:00:00")
+                return LocalDateTime.parse(trimmedDateString, DATE_TIME_FORMATTER_DDMMYYYY);
+            } catch (DateTimeParseException e2) {
+                try {
+                    // Try parsing with YYYYMMDD format (e.g., "20241201") and append default time
+                    return LocalDateTime.parse(trimmedDateString + " 00:00:00", DATE_TIME_FORMATTER_YYYYMMDD);
+                } catch (DateTimeParseException e3) {
+                    try {
+                        // Try parsing with dd/MM/yyyy format (e.g., "10/01/2025") and append default time
+                        return LocalDateTime.parse(trimmedDateString + " 00:00:00", DATE_TIME_FORMATTER_DDMMYYYY);
+                    } catch (DateTimeParseException e4) {
+                        System.err.println("Could not parse date string: '" + dateString + "' - All formats failed.");
+                        return null; // Or throw a custom exception, or handle as needed
+                    }
+                }
             }
         }
     }

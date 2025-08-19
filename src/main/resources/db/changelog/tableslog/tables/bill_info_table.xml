@@ -11,14 +11,28 @@
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="xml_info" type="TEXT"/>
-            <column name="oper_info" type="TEXT"/>
-            <column name="bill_cycle_id" type="VARCHAR(50)"/>
+            <column name="xml_info" type="VARCHAR(255)"/>
+            <column name="oper_info" type="VARCHAR(255)"/>
+            <column name="bill_cycle_id" type="BIGINT"/>
             <column name="bill_run_id" type="BIGINT"/>
-            <column name="processed" type="BOOLEAN" defaultValue="FALSE"/>
-            <column name="created_at" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
             <column name="updated_at" type="TIMESTAMP"/>
+            <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
         </createTable>
+
+        <addForeignKeyConstraint baseTableName="bill_info"
+                                 baseColumnNames="bill_cycle_id"
+                                 referencedTableName="bill_cycle"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_bill_info_bill_cycle"/>
+
+        <addForeignKeyConstraint baseTableName="bill_info"
+                                 baseColumnNames="bill_run_id"
+                                 referencedTableName="bill_run"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_bill_info_bill_run"/>
     </changeSet>
 
 </databaseChangeLog>

@@ -14,14 +14,11 @@ public class AccountSummaryFee {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "account_summary_fee_id")
-    private Long accountSummaryFeeId;
-
     @Column(name = "voice_flag")
     private String voiceFlag;
 
-    @Column(name = "desc")
-    private String desc;
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "number")
     private String number;

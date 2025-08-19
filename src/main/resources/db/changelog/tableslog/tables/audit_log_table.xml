@@ -16,6 +16,8 @@
             <column name="processed_at" type="TIMESTAMP"/>
             <column name="error_message" type="TEXT"/>
             <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
         </createTable>
     </changeSet>
 

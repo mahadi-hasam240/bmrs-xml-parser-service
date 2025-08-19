@@ -5,37 +5,67 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- CDR Info Table -->
-    <changeSet author="redDot" id="7" >
+    <changeSet author="redDot" id="cdr-info-1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="cdr_info"/>
+            </not>
+            <not>
+                <sequenceExists sequenceName="cdr_info_id_seq"/>
+            </not>
+        </preConditions>
         <createSequence sequenceName="cdr_info_id_seq" startValue="1" incrementBy="1"/>
         <createTable tableName="cdr_info">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="bill_run_id" type="BIGINT"/>
-            <column name="call_flow" type="VARCHAR(50)"/>
-            <column name="other_num" type="VARCHAR(50)"/>
-            <column name="call_mask" type="VARCHAR(50)"/>
+            <column name="account_info_id" type="BIGINT"/>
+            <column name="detail_charge_container_id" type="BIGINT"/>
+            <column name="call_flow" type="VARCHAR(255)"/>
+            <column name="other_num" type="VARCHAR(255)"/>
+            <column name="call_mask" type="VARCHAR(255)"/>
             <column name="date_time" type="TIMESTAMP"/>
             <column name="chg_amt" type="DECIMAL(18,2)"/>
             <column name="tax_amt1" type="DECIMAL(18,2)"/>
             <column name="tax_amt2" type="DECIMAL(18,2)"/>
             <column name="tax_amt3" type="DECIMAL(18,2)"/>
-            <column name="volume" type="VARCHAR(50)"/>
-            <column name="service_type" type="VARCHAR(50)"/>
+            <column name="volume" type="VARCHAR(255)"/>
+            <column name="service_type" type="VARCHAR(255)"/>
             <column name="start_time" type="TIMESTAMP"/>
             <column name="end_time" type="TIMESTAMP"/>
-            <column name="duration" type="VARCHAR(50)"/>
-            <column name="result_reason" type="VARCHAR(100)"/>
-            <column name="service_flow" type="VARCHAR(100)"/>
-            <column name="network" type="VARCHAR(50)"/>
-            <column name="country" type="VARCHAR(50)"/>
-            <column name="operator" type="VARCHAR(50)"/>
-            <column name="gprs_flag" type="VARCHAR(10)"/>
-            <column name="cf_num" type="VARCHAR(50)"/>
-            <column name="created_at" type="TIMESTAMP"/>
+            <column name="duration" type="VARCHAR(255)"/>
+            <column name="result_reason" type="VARCHAR(255)"/>
+            <column name="service_flow" type="VARCHAR(255)"/>
+            <column name="network" type="VARCHAR(255)"/>
+            <column name="country" type="VARCHAR(255)"/>
+            <column name="operator" type="VARCHAR(255)"/>
+            <column name="gprs_flag" type="VARCHAR(255)"/>
+            <column name="cf_num" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
             <column name="updated_at" type="TIMESTAMP"/>
+            <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
         </createTable>
+
+        <addForeignKeyConstraint baseTableName="cdr_info"
+                                 baseColumnNames="bill_run_id"
+                                 referencedTableName="bill_run"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_cdr_info_bill_run"/>
+
+        <addForeignKeyConstraint baseTableName="cdr_info"
+                                 baseColumnNames="account_info_id"
+                                 referencedTableName="account_info"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_cdr_info_account_info"/>
+
+        <addForeignKeyConstraint baseTableName="cdr_info"
+                                 baseColumnNames="detail_charge_container_id"
+                                 referencedTableName="detail_charge_container"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_cdr_info_detail_charge_container"/>
     </changeSet>
 
 </databaseChangeLog>

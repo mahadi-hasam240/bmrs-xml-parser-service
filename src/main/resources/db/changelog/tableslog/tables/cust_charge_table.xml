@@ -5,19 +5,23 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- Bill Cycle Table -->
-    <changeSet author="redDot" id="2" >
-        <createSequence sequenceName="bill_cycle_id_seq" startValue="1" incrementBy="1"/>
-        <createTable tableName="bill_cycle">
+    <changeSet author="redDot" id="cust-charge-1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="cust_charge"/>
+            </not>
+            <not>
+                <sequenceExists sequenceName="cust_charge_id_seq"/>
+            </not>
+        </preConditions>
+        <createSequence sequenceName="cust_charge_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="cust_charge">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="bill_cycle_id" type="VARCHAR(50)">
-                <constraints unique="true" nullable="false"/> <!-- Assuming bill_cycle_id is unique and identifying -->
-            </column>
-            <column name="cycle_begin" type="TIMESTAMP"/>
-            <column name="cycle_end" type="TIMESTAMP"/>
-            <column name="due_date" type="TIMESTAMP"/>
+            <column name="category" type="VARCHAR(255)"/>
+            <!-- Add other columns from your CustCharge entity here if any -->
+            <!-- Example: <column name="charge_type" type="VARCHAR(255)"/> -->
             <column name="created_at" type="TIMESTAMP">
                 <constraints nullable="false"/>
             </column>

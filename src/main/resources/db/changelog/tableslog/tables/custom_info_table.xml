@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet author="redDot" id="custom-info-1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="custom_info"/>
+            </not>
+            <not>
+                <sequenceExists sequenceName="custom_info_id_seq"/>
+            </not>
+        </preConditions>
+        <createSequence sequenceName="custom_info_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="custom_info">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="cust_gender" type="VARCHAR(255)"/>
+            <column name="cust_type" type="VARCHAR(255)"/>
+            <column name="cust_level" type="VARCHAR(255)"/>
+            <column name="cust_id_xml" type="VARCHAR(255)"/>
+            <column name="vat_number" type="VARCHAR(255)"/>
+            <column name="cust_code" type="VARCHAR(255)"/>
+            <column name="cust_name_id" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="custom_info"
+                                 baseColumnNames="cust_name_id"
+                                 referencedTableName="name"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_custom_info_cust_name"/>
+    </changeSet>
+
+</databaseChangeLog>

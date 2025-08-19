@@ -22,11 +22,11 @@ public class BillInfo extends BaseEntity{
     @Column(name = "oper_info")
     private String operInfo;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL) // Ensure BillCycle is cascaded
     @JoinColumn(name = "bill_cycle_id", referencedColumnName = "id")
     private BillCycle billCycleInfo;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL) // <-- CRITICAL: Ensure this is present
     @JoinColumn(name = "bill_run_id", referencedColumnName = "id")
     private BillRun billRun;
 

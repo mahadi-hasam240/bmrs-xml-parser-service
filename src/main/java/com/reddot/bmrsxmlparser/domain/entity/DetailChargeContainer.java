@@ -9,7 +9,7 @@ import java.util.List;
 @Table(name = "detail_charge_container")
 @SequenceGenerator(name = "detail_charge_container_seq", sequenceName = "detail_charge_container_id_seq", allocationSize = 1)
 @Data
-public class DetailChargeContainer {
+public class DetailChargeContainer extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "detail_charge_container_seq")

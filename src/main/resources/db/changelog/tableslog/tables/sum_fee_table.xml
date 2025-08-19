@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet author="redDot" id="sum-fee-1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="sum_fee"/>
+            </not>
+            <not>
+                <sequenceExists sequenceName="sum_fee_id_seq"/>
+            </not>
+        </preConditions>
+        <createSequence sequenceName="sum_fee_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="sum_fee">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="voice_flag" type="VARCHAR(255)"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="number_val" type="VARCHAR(255)"/>
+            <column name="duration" type="VARCHAR(255)"/>
+            <column name="charge_fee" type="VARCHAR(255)"/>
+            <column name="currency" type="VARCHAR(255)"/>
+            <column name="account_info_id" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="sum_fee"
+                                 baseColumnNames="account_info_id"
+                                 referencedTableName="account_info"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_sum_fee_account_info"/>
+    </changeSet>
+
+</databaseChangeLog>

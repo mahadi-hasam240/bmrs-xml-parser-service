@@ -12,13 +12,12 @@ import java.util.List;
 @Data
 public class AccountInfo extends BaseEntity {
 
-
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "account_info_seq")
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "acct_id") // Add this field based on DTO
+    @Column(name = "acct_id")
     private String acctId;
 
     @Column(name = "acct_code")
@@ -27,7 +26,7 @@ public class AccountInfo extends BaseEntity {
     @Column(name = "acct_number")
     private String acctNumber;
 
-    @ManyToOne(cascade = CascadeType.ALL) // Consider cascading saves for names
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "acct_name_id", referencedColumnName = "id")
     private Name acctName;
 
@@ -49,7 +48,7 @@ public class AccountInfo extends BaseEntity {
     @Column(name = "amount_due")
     private BigDecimal amountDue;
 
-    @ManyToOne(cascade = CascadeType.ALL) // Example: cascade if AddressType is always owned by AccountInfo
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "address_type_id", referencedColumnName = "id")
     private AddressType addressType;
 
@@ -62,19 +61,18 @@ public class AccountInfo extends BaseEntity {
     @Column(name = "print_vatno")
     private String printVatNo;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "bank_account_info_id", referencedColumnName = "id")
     private BankAccountInfo bankAccountInfo;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "account_summary_fee_id", referencedColumnName = "id")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "acct_sum_fee_id", referencedColumnName = "id")
     private AccountSummaryFee acctSumFee;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "subscriber_info_id", referencedColumnName = "id")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "subs_info_id", referencedColumnName = "id")
     private SubscriberInfo subsInfo;
 
-    // NEW Relationships
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "prev_bill_id", referencedColumnName = "id")
     private PrevBill prevBill;

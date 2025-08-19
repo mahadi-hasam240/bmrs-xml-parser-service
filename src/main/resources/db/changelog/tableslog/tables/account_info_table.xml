@@ -5,8 +5,8 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- Account Info Table -->
-    <changeSet author="redDot" id="4" >
+    <!-- Original Account Info Table Creation (from your previous input) -->
+    <changeSet author="redDot" id="4">
         <createSequence sequenceName="account_info_id_seq" startValue="1" incrementBy="1"/>
         <createTable tableName="account_info">
             <column name="id" type="BIGINT">
@@ -24,13 +24,76 @@
             <column name="credit_limit" type="DECIMAL(18,2)"/>
             <column name="pay_method" type="VARCHAR(50)"/>
             <column name="print_vatno" type="VARCHAR(50)"/>
-            <column name="bank_acct_info_id" type="BIGINT"/>
-            <column name="acct_sum_fee_id" type="BIGINT"/>
-            <column name="subs_info_id" type="BIGINT"/>
-            <column name="processed" type="BOOLEAN" defaultValue="FALSE"/>
             <column name="created_at" type="TIMESTAMP"/>
             <column name="updated_at" type="TIMESTAMP"/>
+            <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
         </createTable>
+        <addForeignKeyConstraint baseTableName="account_info"
+                                 baseColumnNames="acct_name_id"
+                                 referencedTableName="name"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_account_info_acct_name"/>
+    </changeSet>
+
+    <!-- NEW changeSet for AccountInfo updates (missing columns and FKs) -->
+    <changeSet author="redDot" id="4-add-account-info-details">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="account_info" columnName="acct_id"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="account_info">
+            <column name="acct_id" type="VARCHAR(50)"/>
+            <column name="address_type_id" type="BIGINT"/>
+            <column name="bank_account_info_id" type="BIGINT"/>
+            <column name="acct_sum_fee_id" type="BIGINT"/>
+            <column name="subs_info_id" type="BIGINT"/>
+            <column name="prev_bill_id" type="BIGINT"/>
+            <column name="cur_bill_id" type="BIGINT"/>
+            <column name="cust_charge_id" type="BIGINT"/>
+        </addColumn>
+
+        <addForeignKeyConstraint baseTableName="account_info"
+                                 baseColumnNames="address_type_id"
+                                 referencedTableName="address_type"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_account_info_address_type"/>
+
+        <addForeignKeyConstraint baseTableName="account_info"
+                                 baseColumnNames="bank_account_info_id"
+                                 referencedTableName="bank_account_info"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_account_info_bank_acct_info"/>
+
+        <addForeignKeyConstraint baseTableName="account_info"
+                                 baseColumnNames="acct_sum_fee_id"
+                                 referencedTableName="account_summary_fee"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_account_info_acct_sum_fee"/>
+
+        <addForeignKeyConstraint baseTableName="account_info"
+                                 baseColumnNames="subs_info_id"
+                                 referencedTableName="subscriber_info"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_account_info_subs_info"/>
+
+        <addForeignKeyConstraint baseTableName="account_info"
+                                 baseColumnNames="prev_bill_id"
+                                 referencedTableName="prev_bill"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_account_info_prev_bill"/>
+
+        <addForeignKeyConstraint baseTableName="account_info"
+                                 baseColumnNames="cur_bill_id"
+                                 referencedTableName="cur_bill"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_account_info_cur_bill"/>
+
+        <addForeignKeyConstraint baseTableName="account_info"
+                                 baseColumnNames="cust_charge_id"
+                                 referencedTableName="cust_charge"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_account_info_cust_charge"/>
     </changeSet>
 
 </databaseChangeLog>

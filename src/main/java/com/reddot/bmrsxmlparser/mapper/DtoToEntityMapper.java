@@ -1,10 +1,10 @@
 package com.reddot.bmrsxmlparser.mapper;
 
-import com.reddot.bmrsxmlparser.common.utils.DateTimeUtils;
 import com.reddot.bmrsxmlparser.domain.dto.BillInfoDTO;
 import com.reddot.bmrsxmlparser.domain.entity.BillCycle;
 import com.reddot.bmrsxmlparser.domain.entity.BillInfo;
 import com.reddot.bmrsxmlparser.domain.entity.BillRun;
+import com.reddot.commonservice.utils.DateTimeUtils;
 import org.springframework.stereotype.Service;
 
 @Service

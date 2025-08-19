@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @Table(name = "subs_sum_fee")
 @SequenceGenerator(name = "subs_sum_fee_seq", sequenceName = "subs_sum_fee_id_seq", allocationSize = 1)
 @Data
-public class SubsSumFee {
+public class SubsSumFee extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "subs_sum_fee_seq")
@@ -26,10 +26,10 @@ public class SubsSumFee {
     @Column(name = "roam_flag")
     private String roamFlag;
 
-    @Column(name = "desc")
+    @Column(name = "description")
     private String desc;
 
-    @Column(name = "number")
+    @Column(name = "number_val")
     private String number;
 
     @Column(name = "duration")

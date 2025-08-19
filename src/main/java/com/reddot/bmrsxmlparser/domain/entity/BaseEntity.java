@@ -18,8 +18,8 @@ public abstract class BaseEntity implements Serializable {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-//    @Column(name = "processed")
-//    private Boolean processed = false;
+    @Column(name = "processed")
+    private Boolean processed = false;
 
     @PrePersist
     public void prePersist() {

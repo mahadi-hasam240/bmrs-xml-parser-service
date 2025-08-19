@@ -5,23 +5,48 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- Include ChangeSets for Table Creation -->
-    <include file="/db/changelog/tableslog/tables/bill_info_table.xml" />
-    <include file="/db/changelog/tableslog/tables/bill_cycle_table.xml" />
-    <include file="/db/changelog/tableslog/tables/bill_run_table.xml" />
-    <include file="/db/changelog/tableslog/tables/account_info_table.xml" />
-    <include file="/db/changelog/tableslog/tables/fee_category_table.xml" />
-    <include file="/db/changelog/tableslog/tables/charge_line_table.xml" />
-    <include file="/db/changelog/tableslog/tables/cdr_info_table.xml" />
-    <include file="/db/changelog/tableslog/tables/audit_log_table.xml" />
-    <include file="/db/changelog/tableslog/tables/address_type_table.xml" />
-    <include file="/db/changelog/tableslog/tables/bank_account_info_table.xml" />
-    <include file="/db/changelog/tableslog/tables/account_summary_fee_table.xml" />
-    <include file="/db/changelog/tableslog/tables/subscriber_info_table.xml" />
-    <include file="/db/changelog/tableslog/tables/detail_charge_container_table.xml" />
-    <include file="/db/changelog/tableslog/tables/subs_sum_fee_table.xml" />
-    <include file="/db/changelog/tableslog/tables/name_table.xml" />
-    <include file="/db/changelog/tableslog/tables/outbox_table.xml" />
+    <!-- 1. Core independent lookup tables (no FK dependencies on others in this list) -->
+    <include file="db/changelog/tableslog/tables/name_table.xml" />
+    <include file="db/changelog/tableslog/tables/address_type_table.xml" />
+    <include file="db/changelog/tableslog/tables/bank_account_info_table.xml" />
+    <include file="db/changelog/tableslog/tables/account_summary_fee_table.xml" />
+    <include file="db/changelog/tableslog/tables/prev_bill_table.xml" />
+    <include file="db/changelog/tableslog/tables/cur_bill_table.xml" />
+    <include file="db/changelog/tableslog/tables/cust_charge_table.xml" />
+
+    <!-- 2. Tables that depend on the above (e.g., custom_info depends on name, subscriber_info depends on name and detail_charge_container) -->
+    <include file="db/changelog/tableslog/tables/bill_cycle_table.xml" />
+    <include file="db/changelog/tableslog/tables/custom_info_table.xml" />
+    <include file="db/changelog/tableslog/tables/detail_charge_container_table.xml" />
+    <include file="db/changelog/tableslog/tables/subscriber_info_table.xml" />
+
+    <!-- 3. Account_info (depends on name, address_type, bank_account_info, account_summary_fee, subscriber_info, prev_bill, cur_bill, cust_charge) -->
+    <include file="db/changelog/tableslog/tables/account_info_table.xml" />
+
+    <!-- 4. Tables that depend on Account_info AND/OR Bill_cycle, Custom_info, Mkt_msg, Prev_bill, Cur_bill, Cust_charge -->
+    <!-- CRUCIAL: bill_run must be defined BEFORE fee_category and cdr_info -->
+    <include file="db/changelog/tableslog/tables/bill_run_table.xml" />
+
+    <!-- 5. Tables that depend on Account_info, Subscriber_info, Bill_run, Detail_charge_container -->
+    <!-- Place subs_sum_fee_table.xml here, as it depends on subscriber_info -->
+    <include file="db/changelog/tableslog/tables/subs_sum_fee_table.xml" />
+    <include file="db/changelog/tableslog/tables/sum_fee_table.xml" />
+    <include file="db/changelog/tableslog/tables/rating_tax_table.xml" />
+    <include file="db/changelog/tableslog/tables/fee_category_table.xml" />
+    <include file="db/changelog/tableslog/tables/cdr_info_table.xml" />
+
+    <!-- 6. Tables that depend on Bill_info (or other highest-level entities) -->
+    <include file="db/changelog/tableslog/tables/bill_info_table.xml" />
+
+    <!-- 7. Other tables like ChargeLine (dependent on FeeCategory) -->
+    <include file="db/changelog/tableslog/tables/charge_line_table.xml" />
+
+    <!-- 8. Audit Log and other miscellaneous tables (outbox) -->
+    <include file="db/changelog/tableslog/tables/audit_log_table.xml" />
+    <include file="db/changelog/tableslog/tables/outbox_table.xml" />
+
+    <!-- This line looks like a potential duplicate or for a different purpose,
+         ensure it's intentionally separate from the main table definitions. -->
     <include file="db/changelog/db.changelog-batch-schema.xml"/>
 
 </databaseChangeLog>

@@ -5,28 +5,36 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <changeSet author="redDot" id="detail-charge-container-1">
+    <changeSet author="redDot" id="rating-tax-1">
         <preConditions onFail="MARK_RAN">
             <not>
-                <tableExists tableName="detail_charge_container"/>
+                <tableExists tableName="rating_tax"/>
             </not>
             <not>
-                <sequenceExists sequenceName="detail_charge_container_id_seq"/>
+                <sequenceExists sequenceName="rating_tax_id_seq"/>
             </not>
         </preConditions>
-        <createSequence sequenceName="detail_charge_container_id_seq" startValue="1" incrementBy="1"/>
-        <createTable tableName="detail_charge_container">
+        <createSequence sequenceName="rating_tax_id_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="rating_tax">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="free_unit" type="VARCHAR(255)"/>
+            <column name="tax_amount" type="DECIMAL(18,2)"/>
+            <!-- Example: Add other fields as per your <RATING_TAX> XML structure -->
+            <!-- <column name="tax_type" type="VARCHAR(255)"/> -->
+            <column name="account_info_id" type="BIGINT"/>
             <column name="created_at" type="TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
             <column name="updated_at" type="TIMESTAMP"/>
             <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
         </createTable>
-        <!-- No foreign key here for subscriber_info because it's mappedBy on the SubscriberInfo side -->
+
+        <addForeignKeyConstraint baseTableName="rating_tax"
+                                 baseColumnNames="account_info_id"
+                                 referencedTableName="account_info"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_rating_tax_account_info"/>
     </changeSet>
 
 </databaseChangeLog>

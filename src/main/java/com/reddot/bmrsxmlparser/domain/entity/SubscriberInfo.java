@@ -9,7 +9,7 @@ import java.util.List;
 @Table(name = "subscriber_info")
 @SequenceGenerator(name = "subscriber_info_seq", sequenceName = "subscriber_info_id_seq", allocationSize = 1)
 @Data
-public class SubscriberInfo {
+public class SubscriberInfo extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "subscriber_info_seq")
@@ -25,14 +25,14 @@ public class SubscriberInfo {
     @Column(name = "acct_code")
     private String acctCode;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "sub_name_id", referencedColumnName = "id")
     private Name subName;
 
-    @OneToMany(mappedBy = "subscriberInfo")
+    @OneToMany(mappedBy = "subscriberInfo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SubsSumFee> subsSumFees;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "detail_charge_container_id", referencedColumnName = "id")
     private DetailChargeContainer detailChargeContainer;
 

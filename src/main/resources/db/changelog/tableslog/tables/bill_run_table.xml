@@ -1,38 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- Bill Run Table -->
     <changeSet author="redDot" id="3">
         <createSequence sequenceName="bill_run_id_seq" startValue="1" incrementBy="1"/>
         <createTable tableName="bill_run">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="invoice_id" type="VARCHAR(50)"/>
+            <column name="invoice_id" type="VARCHAR(255)"/>
             <column name="invoice_date" type="TIMESTAMP"/>
-            <column name="invoice_no" type="VARCHAR(50)"/>
-            <column name="bar_code_number" type="VARCHAR(100)"/>
-            <column name="statement_date" type="DATE"/>
-            <column name="bill_period" type="VARCHAR(50)"/>
+            <column name="invoice_no" type="VARCHAR(255)"/>
+            <column name="bar_code_number" type="VARCHAR(255)"/>
+            <column name="statement_date" type="TIMESTAMP"/>
+            <column name="bill_period" type="VARCHAR(255)"/>
             <column name="from_date" type="TIMESTAMP"/>
             <column name="to_date" type="TIMESTAMP"/>
-            <column name="due_date" type="TIMESTAMP"/>
-            <column name="lang" type="VARCHAR(20)"/>
-            <column name="currency" type="VARCHAR(10)"/>
-            <column name="bill_medium" type="VARCHAR(50)"/>
-            <column name="fee_precision" type="INT"/>
-            <column name="bill_insert" type="VARCHAR(50)"/>
+            <column name="due_date_bill_prop" type="TIMESTAMP"/>
+            <column name="lang" type="VARCHAR(50)"/>
+            <column name="currency" type="VARCHAR(50)"/>
+            <column name="bill_medium" type="VARCHAR(255)"/>
+            <column name="fee_precision" type="VARCHAR(50)"/>
+            <column name="bill_insert" type="VARCHAR(255)"/>
             <column name="bill_type" type="VARCHAR(50)"/>
-            <column name="mobile_number" type="VARCHAR(20)"/>
+            <column name="mobile_number" type="VARCHAR(50)"/>
             <column name="end_date" type="TIMESTAMP"/>
-            <column name="main_offering" type="VARCHAR(100)"/>
-            <column name="processed" type="BOOLEAN" defaultValue="FALSE"/>
-            <column name="created_at" type="TIMESTAMP"/>
+            <column name="main_offering_name" type="VARCHAR(255)"/>
+            <column name="bill_cycle_id" type="BIGINT"/>
+            <column name="account_info_id" type="BIGINT"/>
+            <column name="custom_info_id" type="BIGINT"/>
+            <column name="mkt_msg_id" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
             <column name="updated_at" type="TIMESTAMP"/>
+            <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
         </createTable>
+
+        <addForeignKeyConstraint baseTableName="bill_run"
+                                 baseColumnNames="bill_cycle_id"
+                                 referencedTableName="bill_cycle"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_bill_run_bill_cycle"/>
+
+        <addForeignKeyConstraint baseTableName="bill_run"
+                                 baseColumnNames="account_info_id"
+                                 referencedTableName="account_info"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_bill_run_account_info"/>
+
+        <addForeignKeyConstraint baseTableName="bill_run"
+                                 baseColumnNames="custom_info_id"
+                                 referencedTableName="custom_info"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_bill_run_custom_info"/>
+
     </changeSet>
 
 </databaseChangeLog>

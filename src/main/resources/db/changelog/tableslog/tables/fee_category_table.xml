@@ -5,19 +5,49 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- Fee Category Table -->
-    <changeSet author="redDot" id="5">
+    <changeSet author="redDot" id="fee-category-1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="fee_category"/>
+            </not>
+            <not>
+                <sequenceExists sequenceName="fee_category_id_seq"/>
+            </not>
+        </preConditions>
         <createSequence sequenceName="fee_category_id_seq" startValue="1" incrementBy="1"/>
         <createTable tableName="fee_category">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="bill_run_id" type="BIGINT"/>
-            <column name="pay_acct_code" type="VARCHAR(50)"/>
-            <column name="free_unit" type="VARCHAR(50)"/>
-            <column name="created_at" type="TIMESTAMP"/>
+            <column name="account_info_id" type="BIGINT"/>
+            <column name="detail_charge_container_id" type="BIGINT"/>
+            <column name="pay_acct_code" type="VARCHAR(255)"/>
+            <column name="free_unit" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
             <column name="updated_at" type="TIMESTAMP"/>
+            <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
         </createTable>
+
+        <addForeignKeyConstraint baseTableName="fee_category"
+                                 baseColumnNames="bill_run_id"
+                                 referencedTableName="bill_run"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_fee_category_bill_run"/>
+
+        <addForeignKeyConstraint baseTableName="fee_category"
+                                 baseColumnNames="account_info_id"
+                                 referencedTableName="account_info"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_fee_category_account_info"/>
+
+        <addForeignKeyConstraint baseTableName="fee_category"
+                                 baseColumnNames="detail_charge_container_id"
+                                 referencedTableName="detail_charge_container"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_fee_category_detail_charge_container"/>
     </changeSet>
 
 </databaseChangeLog>

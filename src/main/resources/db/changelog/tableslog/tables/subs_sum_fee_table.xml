@@ -5,23 +5,43 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <!-- SubsSumFee Table -->
-    <changeSet author="redDot" id="2" context="postgresql, oracle">
+    <changeSet author="redDot" id="subs-sum-fee-1">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="subs_sum_fee"/>
+            </not>
+            <not>
+                <sequenceExists sequenceName="subs_sum_fee_id_seq"/>
+            </not>
+        </preConditions>
         <createSequence sequenceName="subs_sum_fee_id_seq" startValue="1" incrementBy="1"/>
         <createTable tableName="subs_sum_fee">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="subscriber_info_id" type="BIGINT"/> <!-- Added FK column -->
             <column name="voice_flag" type="VARCHAR(50)"/>
             <column name="roam_flag" type="VARCHAR(50)"/>
-            <column name="desc" type="VARCHAR(255)"/>
-            <column name="number" type="VARCHAR(50)"/>
+            <column name="description" type="VARCHAR(255)"/> <!-- RENAMED -->
+            <column name="number_val" type="VARCHAR(50)"/> <!-- RENAMED -->
             <column name="duration" type="VARCHAR(50)"/>
             <column name="chg_fee" type="DECIMAL(18,2)"/>
             <column name="currency" type="VARCHAR(50)"/>
             <column name="pay_flag" type="VARCHAR(50)"/>
             <column name="billitem_code" type="VARCHAR(50)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP"/>
+            <column name="processed" type="BOOLEAN" defaultValueBoolean="false"/>
         </createTable>
-  </changeSet>
+
+        <!-- Add foreign key constraint -->
+        <addForeignKeyConstraint baseTableName="subs_sum_fee"
+                                 baseColumnNames="subscriber_info_id"
+                                 referencedTableName="subscriber_info"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_subs_sum_fee_subscriber_info"/>
+    </changeSet>
 
 </databaseChangeLog>
